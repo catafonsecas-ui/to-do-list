@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>To-Do con Proyectos, Prioridad y Deadlines</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width:900px; margin:auto; }
+    li { 
+      margin: 8px 0; 
+      padding: 6px; 
+      border: 1px solid #ddd; 
+      border-radius: 6px; 
+      background: #f9f9f9;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      transition: box-shadow 0.15s, background 0.15s;
+      position: relative;
+    }
+    li:hover {
+      box-shadow: 0 2px 8px #0001;
+      background: #f1f7ff;
+    }
+    .main-row-sep {
+      border-right: 1px solid #e0e0e0;
+      margin-right: 12px;
+      padding-right: 12px;
+    }
+    .btn-borrar {
+      background: none;
+      border: none;
+      color: #b44;
+      font-size: 1.1em;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.15s, color 0.15s;
+      margin-left: 2px;
+    }
+    .btn-borrar:hover {
+      color: #e00;
+      opacity: 1;
+    }
+    .subtarea-form input.edit {
+      background: #f6faff;
+      border-radius: 4px;
+      border: 1px solid #dde6f2;
+    }
+    ul ul {
+      margin-top: 2px;
+      margin-bottom: 2px;
+      padding-left: 0;
+    }
+    ul > li > ul {
+      margin-left: 36px !important;
+    }
+    li.dragging { opacity: 0.5; background: #eaeaea; }
+    .done { text-decoration: line-through; color: gray; }
+    span.editable { cursor: pointer; border-bottom: 1px dashed transparent; }
+    span.editable:hover { border-bottom: 1px dashed #666; }
+    .deadline { font-size: 0.9em; cursor: pointer; margin-left:4px; }
+    .overdue { color: red; font-weight: bold; }
+    .priority { font-size: 0.9em; font-weight: bold; cursor: pointer; margin-left:6px; }
+    .alta { color: red; } .media { color: orange; } .baja { color: green; }
+    .project { font-size:0.85em; font-style:italic; margin-left:6px; cursor:pointer; color:#444 }
+    input.edit, select.edit { padding: 2px; }
+    .controls { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin:10px 0 14px 0; }
+    button { margin-left: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Lista de Tareas</h1>
+
+  <!-- Formulario: texto, fecha, prioridad, proyecto -->
+  <form id="form" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <input id="input" placeholder="Nueva tarea..." required style="flex:1;min-width:180px">
+    <input type="date" id="dateInput">
+    <select id="priorityInput">
+      <option value="alta">🔴 Alta</option>
+      <option value="media" selected>🟡 Media</option>
+      <option value="baja">🟢 Baja</option>
+    </select>
+      <div style="display:flex;align-items:center;gap:4px;min-width:120px">
+        <select id="projectSelect" style="min-width:120px"></select>
+        <input id="projectInput" placeholder="Nueva categoría" style="min-width:120px;display:none;">
+      </div>
+  <button>Añadir</button>
+  </form>
+
+  <div class="controls">
+    <div>
+      <button id="clearCompleted">Borrar Completadas</button>
+    </div>
+
+    <div>
+      <label>Filtro: </label>
+      <select id="filter">
+        <option value="todas">Todas</option>
+        <option value="pendientes">Pendientes</option>
+        <option value="completadas">Completadas</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Proyecto: </label>
+      <select id="projectFilter">
+        <option value="todas">Todas</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Orden: </label>
+      <select id="sort">
+        <option value="manual">Manual</option>
+        <option value="fecha">Por fecha límite</option>
+        <option value="prioridad">Por prioridad</option>
+      </select>
+    </div>
+  </div>
+
+
+  <ul id="lista"></ul>
+  <div id="feedback-msg" style="position:fixed;left:50%;top:32px;transform:translateX(-50%);background:#2a7be4;color:white;padding:8px 20px;border-radius:8px;font-size:1.05em;box-shadow:0 2px 12px #0002;z-index:1000;opacity:0;pointer-events:none;transition:opacity 0.3s;">Mensaje</div>
+
+  <script>
+    const STORAGE_KEY = "mis_tareas";
+    const form = document.getElementById("form");
+    const input = document.getElementById("input");
+    const dateInput = document.getElementById("dateInput");
+    const priorityInput = document.getElementById("priorityInput");
+    const projectInput = document.getElementById("projectInput");
+    function sugerirUltimaCategoria() {
+      const projectInput = document.getElementById("projectInput");
+      const ultimaCategoria = localStorage.getItem("ultima_categoria") || "";
+      if (projectInput && !projectInput.value && ultimaCategoria) {
+        projectInput.value = ultimaCategoria;
+      }
+    }
+    const lista = document.getElementById("lista");
+    const clearBtn = document.getElementById("clearCompleted");
+    const filterSelect = document.getElementById("filter");
+    const projectFilter = document.getElementById("projectFilter");
+    const sortSelect = document.getElementById("sort");
+
+    let tareas = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]")
+    let filtro = "todas"
+    let orden = "manual"
+    let proyectoFiltro = "todas"
+    let dragIndex = null
+
+    // Render inicial
+    render() // Llamada a la función render para actualizar la interfaz
+
+    // Crear tarea
+      form.addEventListener("submit", e => {
+        e.preventDefault()
+        const texto = input.value.trim();
+        const fecha = dateInput.value;
+        const prioridad = priorityInput.value || "media";
+        const projectSelect = document.getElementById("projectSelect");
+        const projectInput = document.getElementById("projectInput");
+        let proyecto = null;
+        let usonueva = false;
+        if (projectSelect && projectSelect.value === "__nueva__") {
+          proyecto = projectInput.value.trim();
+          usonueva = true;
+        } else if (projectSelect) {
+          proyecto = projectSelect.value;
+        }
+        if (!texto) return;
+        if (proyecto === "" || proyecto === "__nueva__") proyecto = null;
+        if (proyecto) {
+          let proyectos = Array.from(new Set(tareas.map(t => t.proyecto).filter(Boolean)));
+          if (proyectos.map(p=>p.toLowerCase()).includes(proyecto.toLowerCase())) {
+            proyecto = proyectos.find(p=>p.toLowerCase()===proyecto.toLowerCase());
+          }
+          localStorage.setItem("ultima_categoria", proyecto);
+        }
+        tareas.push({ texto, completada: false, deadline: fecha || null, prioridad, proyecto, subtasks: [], descripcion: "" });
+        guardar();
+        input.value = ""; dateInput.value = ""; priorityInput.value = "media";
+        if (usonueva && projectInput) projectInput.value = "";
+        render();
+      })
+    // Cambiar visibilidad del input de nueva categoría según selección
+    document.addEventListener("change", function(e) {
+      if (e.target && e.target.id === "projectSelect") {
+        const projectInput = document.getElementById("projectInput");
+        e.target.setAttribute('data-selected', e.target.value);
+        if (e.target.value === "__nueva__") {
+          projectInput.style.display = "inline-block";
+          projectInput.value = "";
+          projectInput.focus();
+        } else {
+          projectInput.style.display = "none";
+        }
+      }
+    });
+
+    clearBtn.addEventListener("click", () => {
+      tareas = tareas.filter(t => !t.completada)
+      guardar()
+      render()
+    })
+
+    filterSelect.addEventListener("change", () => { filtro = filterSelect.value; render() })
+    sortSelect.addEventListener("change", () => { orden = sortSelect.value; render() })
+    projectFilter.addEventListener("change", () => { proyectoFiltro = projectFilter.value; render() })
+
+    function mostrarFeedback(msg) {
+      const el = document.getElementById("feedback-msg");
+      el.textContent = msg;
+      el.style.opacity = 1;
+      clearTimeout(el._timeout)
+      el._timeout = setTimeout(()=>{el.style.opacity=0}, 1200)
+    }
+
+    function render() {
+      // --- reconstruir el selector de categorías para el formulario principal ---
+      const projectSelect = document.getElementById("projectSelect");
+      const projectInput = document.getElementById("projectInput");
+      if (projectSelect) {
+        // Limpiar opciones previas
+        projectSelect.innerHTML = "";
+        // Obtener categorías únicas y ordenadas
+        let proyectos = Array.from(new Set(tareas.map(t => t.proyecto).filter(Boolean)));
+        proyectos = proyectos.filter(p => p && p.trim()).sort((a,b) => a.localeCompare(b, 'es'));
+        let ultimaCategoria = localStorage.getItem("ultima_categoria") || "";
+        let addedUltima = false;
+        // Opción sugerida (última usada)
+        if (ultimaCategoria && !proyectos.includes(ultimaCategoria)) {
+          const opt = document.createElement("option");
+          opt.value = ultimaCategoria;
+          opt.textContent = ultimaCategoria + " (última usada)";
+          projectSelect.appendChild(opt);
+          addedUltima = true;
+        }
+        // Opciones de proyectos existentes
+        proyectos.forEach(p => {
+          const opt = document.createElement("option");
+          opt.value = p;
+          opt.textContent = p;
+          projectSelect.appendChild(opt);
+        });
+        // Opción para nueva categoría (siempre presente)
+        const optNueva = document.createElement("option");
+        optNueva.value = "__nueva__";
+        optNueva.textContent = "+ Nueva categoría...";
+        projectSelect.appendChild(optNueva);
+        // Mantener selección previa si existe
+        let selected = projectSelect.getAttribute('data-selected');
+        if (selected && Array.from(projectSelect.options).some(o => o.value === selected)) {
+          projectSelect.value = selected;
+        } else if (ultimaCategoria && addedUltima) {
+          projectSelect.value = ultimaCategoria;
+        } else if (proyectos.length > 0) {
+          projectSelect.value = proyectos[0];
+        } else {
+          projectSelect.value = "__nueva__";
+        }
+        // Mostrar/ocultar input según selección
+        if (projectSelect.value === "__nueva__") {
+          projectInput.style.display = "inline-block";
+        } else {
+          projectInput.style.display = "none";
+        }
+      }
+      // Actualizar datalist de proyectos para el input de creación
+      const datalist = document.getElementById("projectList");
+      if (datalist) {
+        const proyectos = Array.from(new Set(tareas.map(t => t.proyecto).filter(Boolean)));
+        datalist.innerHTML = proyectos.map(p => `<option value="${p}">`).join("");
+      }
+      sugerirUltimaCategoria();
+      lista.innerHTML = ""
+
+      // aseguramos forma estable de datos y preservamos índice original
+      let listaTareas = tareas.map((t, index) => {
+        t.index = index;
+        if (!Array.isArray(t.subtasks)) t.subtasks = [];
+        return t;
+      });
+
+      // --- reconstruir el selector de proyectos ---
+      const proyectosSet = new Set(listaTareas.map(t => t.proyecto).filter(Boolean))
+      projectFilter.innerHTML = '<option value="todas">Todas</option>'
+      Array.from(proyectosSet).sort().forEach(p => {
+        const opt = document.createElement("option")
+        opt.value = p
+        opt.textContent = p
+        projectFilter.appendChild(opt)
+      })
+
+      // si el proyecto seleccionado ya no existe, reseteamos
+      if (proyectoFiltro !== "todas" && !proyectosSet.has(proyectoFiltro)) {
+        proyectoFiltro = "todas"
+      }
+      projectFilter.value = proyectoFiltro
+
+      // --- aplicar filtro por estado y proyecto ---
+      listaTareas = listaTareas.filter(t => {
+        if (filtro === "pendientes" && t.completada) return false
+        if (filtro === "completadas" && !t.completada) return false
+        if (proyectoFiltro !== "todas" && t.proyecto !== proyectoFiltro) return false
+        return true
+      })
+
+      // --- ordenar ---
+      if (orden === "fecha") {
+        listaTareas.sort((a,b) => {
+          if(!a.deadline && !b.deadline) return a.index - b.index
+          if(!a.deadline) return 1
+          if(!b.deadline) return -1
+          const cmp = a.deadline.localeCompare(b.deadline); return cmp !== 0 ? cmp : (a.index - b.index)
+        })
+      } else if (orden === "prioridad") {
+        const prioridadOrden = { alta: 1, media: 2, baja: 3 }
+        listaTareas.sort((a,b) => {
+          const aP = prioridadOrden[a.prioridad] ?? 4
+          const bP = prioridadOrden[b.prioridad] ?? 4
+          if(aP !== bP) return aP - bP
+          if(a.deadline && b.deadline) {
+            const cmp = a.deadline.localeCompare(b.deadline); return cmp !== 0 ? cmp : (a.index - b.index)
+          }
+          if(a.deadline && !b.deadline) return -1
+          if(!a.deadline && b.deadline) return 1
+          return a.index - b.index
+        })
+      }
+
+      // --- renderizar cada tarea ---
+      listaTareas.forEach(t => {
+        const li = document.createElement("li")
+        li.draggable = (orden === "manual")
+        if(t.completada) li.classList.add("done")
+
+
+  // Contenedor principal flex para separar zonas
+  const mainRow = document.createElement("div")
+  mainRow.style.display = "flex"
+  mainRow.style.justifyContent = "space-between"
+  mainRow.style.alignItems = "center"
+  mainRow.style.width = "100%"
+
+  // Zona izquierda: checkbox y texto editable
+  const left = document.createElement("div")
+  left.style.display = "flex"
+  left.style.alignItems = "center"
+  left.style.gap = "8px"
+
+  const check = document.createElement("input"); check.type = "checkbox"; check.checked = t.completada
+  check.addEventListener("change", () => { tareas[t.index].completada = check.checked; guardar(); mostrarFeedback(check.checked ? "¡Tarea completada!" : "Tarea marcada como pendiente"); render() })
+
+  const span = document.createElement("span"); span.textContent = t.texto; span.classList.add("editable")
+  span.addEventListener("click", () => { editarTexto(t.index, li, span) })
+
+  left.appendChild(check)
+  left.appendChild(span)
+
+
+        // Zona derecha: metadatos, descripción y borrar
+        const right = document.createElement("div")
+        right.style.display = "flex"
+        right.style.alignItems = "center"
+        right.style.gap = "8px"
+
+        const deadline = document.createElement("span"); deadline.classList.add("deadline")
+        deadline.textContent = t.deadline ? `(límite: ${t.deadline})` : "(sin fecha)"
+        const hoy = new Date().toISOString().split("T")[0]
+        if(t.deadline && t.deadline < hoy && !t.completada) deadline.classList.add("overdue")
+        deadline.addEventListener("click", () => { editarFecha(t.index, li, deadline) })
+
+        const priority = document.createElement("span"); priority.classList.add("priority", t.prioridad)
+        priority.textContent = mostrarPrioridad(t.prioridad)
+        priority.addEventListener("click", () => { editarPrioridad(t.index, li, priority) })
+
+        const projectSpan = document.createElement("span"); projectSpan.classList.add("project")
+        projectSpan.textContent = t.proyecto ? `[${t.proyecto}]` : ""
+        projectSpan.addEventListener("click", () => { editarProyecto(t.index, li, projectSpan) })
+
+        // Botón/ícono para descripción
+        const descBtn = document.createElement("button");
+        descBtn.textContent = t.descripcion && t.descripcion.trim() ? "📝" : "➕";
+        descBtn.title = t.descripcion && t.descripcion.trim() ? "Ver/editar descripción" : "Agregar descripción";
+        descBtn.style.fontSize = "1.1em";
+        descBtn.style.opacity = "0.7";
+        descBtn.style.background = "none";
+        descBtn.style.border = "none";
+        descBtn.style.cursor = "pointer";
+        descBtn.addEventListener("click", e => {
+          e.preventDefault();
+          mostrarDescripcionModal(t.index);
+        });
+
+        const btnBorrar = document.createElement("button"); btnBorrar.textContent = "❌"
+        btnBorrar.className = "btn-borrar"
+        btnBorrar.title = "Borrar tarea"
+        btnBorrar.addEventListener("click", () => {
+          if (Array.isArray(t.subtasks) && t.subtasks.length > 0) {
+            if (!confirm("Esta tarea contiene subtareas. ¿Seguro que quieres borrarla junto con todas sus subtareas?")) return;
+          }
+          tareas.splice(t.index,1); guardar(); mostrarFeedback("Tarea eliminada"); render();
+        })
+
+        right.appendChild(deadline)
+        right.appendChild(priority)
+        right.appendChild(projectSpan)
+        right.appendChild(descBtn)
+        right.appendChild(btnBorrar)
+
+  // Separador visual entre zonas
+  left.classList.add("main-row-sep")
+
+  mainRow.appendChild(left)
+  mainRow.appendChild(right)
+  li.appendChild(mainRow)
+
+        // --- controles para añadir subtarea ---
+        const subForm = document.createElement("form")
+        subForm.className = "subtarea-form"
+        subForm.style.display = "flex"
+        subForm.style.gap = "4px"
+        subForm.style.margin = "6px 0 0 32px"
+        const subInput = document.createElement("input")
+        subInput.type = "text"
+        subInput.placeholder = "Añadir subtarea..."
+        subInput.style.flex = "1"
+        subInput.classList.add("edit")
+        setTimeout(() => { subInput.focus() }, 0)
+        const subBtn = document.createElement("button")
+        subBtn.type = "submit"
+        subBtn.textContent = "+"
+        subBtn.disabled = true
+        subInput.addEventListener("input", () => {
+          subBtn.disabled = !subInput.value.trim()
+        })
+        // Mejorar navegación: Enter añade, Tab navega
+        subInput.addEventListener("keydown", e => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            const val = subInput.value.trim();
+            if(val) {
+              tareas[t.index].subtasks.push({ texto: val, completada: false });
+              guardar();
+              mostrarFeedback("Subtarea añadida");
+              subInput.value = "";
+              subBtn.disabled = true;
+              // Mantener el foco para añadir más rápido
+              setTimeout(() => { subInput.focus(); }, 0);
+              render();
+            }
+          }
+          // Tab: dejar comportamiento por defecto (navega al siguiente campo)
+        });
+        subForm.onsubmit = e => {
+          e.preventDefault();
+          const val = subInput.value.trim();
+          if(val) {
+            tareas[t.index].subtasks.push({ texto: val, completada: false });
+            guardar();
+            mostrarFeedback("Subtarea añadida");
+            subInput.value = "";
+            subBtn.disabled = true;
+            setTimeout(() => { subInput.focus(); }, 0);
+            render();
+          }
+        }
+        subForm.appendChild(subInput)
+        subForm.appendChild(subBtn)
+        li.appendChild(subForm)
+
+        // --- renderizar subtareas ---
+        if (Array.isArray(t.subtasks) && t.subtasks.length > 0) {
+          const ulSub = document.createElement("ul")
+          ulSub.style.marginLeft = "32px"
+          ulSub.style.listStyle = "circle inside"
+          t.subtasks.forEach((sub, subIdx) => {
+            const subLi = document.createElement("li")
+            subLi.style.display = "flex"
+            subLi.style.alignItems = "center"
+            if(sub.completada) subLi.classList.add("done")
+
+            const subCheck = document.createElement("input"); subCheck.type = "checkbox"; subCheck.checked = !!sub.completada
+            subCheck.addEventListener("change", () => {
+              tareas[t.index].subtasks[subIdx].completada = subCheck.checked; guardar(); mostrarFeedback(subCheck.checked ? "¡Subtarea completada!" : "Subtarea pendiente"); render()
+            })
+
+            const subSpan = document.createElement("span"); subSpan.textContent = sub.texto || "(Subtarea)"; subSpan.classList.add("editable")
+            // Edición inline de subtarea (solo texto)
+            subSpan.addEventListener("click", () => {
+              const inputEdit = document.createElement("input"); inputEdit.type = "text"
+              inputEdit.value = sub.texto || ""; inputEdit.classList.add("edit")
+              subLi.replaceChild(inputEdit, subSpan); inputEdit.focus()
+              inputEdit.addEventListener("keydown", e => { if(e.key==="Enter") guardarSubTexto(t.index, subIdx, inputEdit.value); if(e.key==="Escape") render() })
+              inputEdit.addEventListener("blur", () => { guardarSubTexto(t.index, subIdx, inputEdit.value) })
+            })
+
+            // Botón borrar subtarea
+            const subDel = document.createElement("button")
+            subDel.textContent = "❌"
+            subDel.className = "btn-borrar"
+            subDel.title = "Borrar subtarea"
+            subDel.style.marginLeft = "4px"
+            subDel.addEventListener("click", e => {
+              e.preventDefault(); e.stopPropagation();
+              tareas[t.index].subtasks.splice(subIdx,1); guardar(); mostrarFeedback("Subtarea eliminada"); render()
+            })
+
+            subLi.appendChild(subCheck)
+            subLi.appendChild(subSpan)
+            subLi.appendChild(subDel)
+            ulSub.appendChild(subLi)
+          })
+          li.appendChild(ulSub)
+        }
+
+        // drag & drop (sólo en manual)
+        if(orden === "manual") {
+          li.addEventListener("dragstart", () => { dragIndex = t.index; li.classList.add("dragging") })
+          li.addEventListener("dragend", () => { li.classList.remove("dragging") })
+          li.addEventListener("dragover", e=> e.preventDefault())
+          li.addEventListener("drop", () => {
+            if(dragIndex !== null && dragIndex !== t.index) {
+              const moved = tareas.splice(dragIndex,1)[0]
+              tareas.splice(t.index,0,moved)
+              guardar(); render()
+            }
+          })
+        }
+
+        lista.appendChild(li)
+      })
+    // --- función para guardar texto de subtarea ---
+    function guardarSubTexto(indice, subIdx, nuevoTexto) {
+      const t = nuevoTexto.trim(); if(t!=="") tareas[indice].subtasks[subIdx].texto = t
+      guardar(); render()
+    }
+    }
+
+    // --- funciones de edición inline ---
+    function editarTexto(indice, li, span) {
+      const inputEdit = document.createElement("input"); inputEdit.type = "text"
+      inputEdit.value = tareas[indice].texto || ""; inputEdit.classList.add("edit")
+      // Buscar el contenedor flex izquierdo
+      const mainRow = li.querySelector('div');
+      const left = mainRow ? mainRow.querySelector('.main-row-sep') : null;
+      if(left && left.contains(span)) {
+        left.replaceChild(inputEdit, span);
+      } else {
+        li.replaceChild(inputEdit, span);
+      }
+      inputEdit.focus()
+      let editando = true;
+      inputEdit.addEventListener("keydown", e => {
+        if(e.key==="Enter") { editando = false; guardarTexto(indice,inputEdit.value); }
+        if(e.key==="Escape") { editando = false; render(); }
+      })
+      inputEdit.addEventListener("blur", () => {
+        if(editando) { editando = false; guardarTexto(indice,inputEdit.value); }
+      })
+    }
+
+    function editarFecha(indice, li, deadlineSpan) {
+      const inputDate = document.createElement("input"); inputDate.type = "date"
+      inputDate.value = tareas[indice].deadline || ""; inputDate.classList.add("edit")
+      li.replaceChild(inputDate, deadlineSpan); inputDate.focus()
+      inputDate.addEventListener("change", () => guardarFecha(indice,inputDate.value))
+      inputDate.addEventListener("blur", () => guardarFecha(indice,inputDate.value))
+      inputDate.addEventListener("keydown", e => { if(e.key==="Escape") render() })
+    }
+
+    function editarPrioridad(indice, li, prioritySpan) {
+      const select = document.createElement("select"); select.classList.add("edit")
+      select.innerHTML = `<option value="alta">🔴 Alta</option><option value="media">🟡 Media</option><option value="baja">🟢 Baja</option>`
+      select.value = tareas[indice].prioridad || "media"
+      li.replaceChild(select, prioritySpan); select.focus()
+      select.addEventListener("change", () => guardarPrioridad(indice, select.value))
+      select.addEventListener("blur", () => guardarPrioridad(indice, select.value))
+    }
+
+    function editarProyecto(indice, li, projectSpan) {
+      const inputProj = document.createElement("input"); inputProj.type = "text"
+      inputProj.value = tareas[indice].proyecto || ""; inputProj.classList.add("edit")
+      li.replaceChild(inputProj, projectSpan); inputProj.focus()
+      inputProj.addEventListener("keydown", e => { if(e.key==="Enter") guardarProyecto(indice, inputProj.value); if(e.key==="Escape") render() })
+      inputProj.addEventListener("blur", () => guardarProyecto(indice, inputProj.value))
+    }
+
+    // --- funciones guardar ---
+    function guardarTexto(indice, nuevoTexto) {
+      const t = nuevoTexto.trim(); if(t!=="") tareas[indice].texto = t
+      guardar(); render()
+    }
+    function guardarFecha(indice, nuevaFecha) { tareas[indice].deadline = nuevaFecha || null; guardar(); render() }
+    function guardarPrioridad(indice, nuevaPrioridad) { tareas[indice].prioridad = nuevaPrioridad || "media"; guardar(); render() }
+    function guardarProyecto(indice, nuevoProyecto) { tareas[indice].proyecto = nuevoProyecto.trim() || null; guardar(); render() }
+
+    function mostrarPrioridad(prioridad) {
+      if (prioridad === "alta") return "🔴 Alta"
+      if (prioridad === "baja") return "🟢 Baja"
+      return "🟡 Media"
+    }
+
+    function guardar() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tareas)) }
+  </script>
+</body>
+</html>
