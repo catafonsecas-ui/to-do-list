@@ -13,6 +13,8 @@ export class UI {
         this.priorityInput = document.getElementById('priorityInput');
         this.projectInput = document.getElementById('projectInput');
         this.reminderInput = document.getElementById('reminderInput');
+        this.projectSelect = document.getElementById('projectSelect');
+        this.projectInputContainer = document.getElementById('projectInputContainer');
         
         this.lista = document.getElementById('lista');
         this.clearBtn = document.getElementById('clearCompleted');
@@ -24,7 +26,7 @@ export class UI {
         const elements = [this.form, this.input, this.dateInput, this.timeInput,
                          this.priorityInput, this.reminderInput, this.lista,
                          this.clearBtn, this.filterSelect, this.projectFilter,
-                         this.sortSelect];
+                         this.sortSelect, this.projectSelect, this.projectInputContainer];
                          
         elements.forEach((el, i) => {
             if (!el) console.error(`Elemento #${i} no encontrado`);
@@ -37,6 +39,19 @@ export class UI {
         this.filterSelect.addEventListener('change', () => this.handleFilterChange());
         this.sortSelect.addEventListener('change', () => this.handleSortChange());
         this.projectFilter.addEventListener('change', () => this.handleProjectFilterChange());
+
+        // Manejar cambios en el selector de proyectos usando delegación de eventos
+        this.form.addEventListener('change', e => {
+            if (e.target.id === 'projectSelect') {
+                if (e.target.value === '__nueva__') {
+                    this.projectInputContainer.style.display = 'block';
+                    this.projectInput.focus();
+                } else {
+                    this.projectInputContainer.style.display = 'none';
+                    this.projectInput.value = '';
+                }
+            }
+        });
 
         this.dateInput.addEventListener('change', () => {
             this.reminderInput.disabled = !this.dateInput.value;
@@ -100,6 +115,7 @@ export class UI {
     resetForm() {
         this.form.reset();
         this.reminderInput.disabled = true;
+        this.projectInputContainer.style.display = 'none';
     }
 
     handleClearCompleted() {
