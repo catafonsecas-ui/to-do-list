@@ -175,17 +175,25 @@ export class UI {
         });
     }
 
-    createTaskElement(task, index) {
+    createTaskElement(task, filteredIndex) { // Renamed 'index' to 'filteredIndex' for clarity
         const li = document.createElement('li');
         li.dataset.taskId = task.id;
-        li.dataset.index = index;
+        li.dataset.index = task.index; // Use original index
+        li.style.display = 'block'; // Override flex display for the main container li
         if (task.completada) li.classList.add('done');
+
+        // Container for the main task row
+        const mainTaskRow = document.createElement('div');
+        mainTaskRow.style.display = 'flex';
+        mainTaskRow.style.alignItems = 'center';
+        mainTaskRow.style.gap = '8px';
+        mainTaskRow.style.width = '100%';
 
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.checked = task.completada;
         checkbox.addEventListener('change', () => {
-            task.toggle();
+            this.taskList.tareas[task.index].toggle();
             this.taskList.save();
             this.render();
             this.showFeedback(task.completada ? '¡Tarea completada!' : 'Tarea pendiente');
@@ -194,7 +202,7 @@ export class UI {
         const texto = document.createElement('span');
         texto.textContent = task.texto;
         texto.classList.add('texto');
-
+        
         const deadline = document.createElement('span');
         deadline.textContent = task.deadline ? new Date(task.deadline).toLocaleString() : '(sin fecha)';
         deadline.classList.add('deadline');
@@ -207,22 +215,106 @@ export class UI {
         deleteBtn.className = 'btn-borrar';
         deleteBtn.addEventListener('click', () => {
             if (confirm('¿Seguro que quieres borrar esta tarea?')) {
-                this.taskList.removeTask(index);
+                this.taskList.removeTask(task.index); // <-- BUG FIX
                 this.render();
                 this.showFeedback('Tarea eliminada');
             }
         });
 
-        li.appendChild(checkbox);
-        li.appendChild(texto);
-        li.appendChild(deadline);
+        mainTaskRow.appendChild(checkbox);
+        mainTaskRow.appendChild(texto);
+        mainTaskRow.appendChild(deadline);
         if (task.proyecto) {
             const proyecto = document.createElement('span');
             proyecto.textContent = `[${task.proyecto}]`;
             proyecto.classList.add('proyecto');
-            li.appendChild(proyecto);
+            mainTaskRow.appendChild(proyecto);
         }
-        li.appendChild(deleteBtn);
+        const spacer = document.createElement('div');
+        spacer.style.flexGrow = '1';
+        mainTaskRow.appendChild(spacer);
+        mainTaskRow.appendChild(deleteBtn);
+        
+        li.appendChild(mainTaskRow);
+
+        // --- SUBTASKS ---
+        const subtaskContainer = document.createElement('div');
+        subtaskContainer.style.marginLeft = '40px';
+        subtaskContainer.style.marginTop = '10px';
+
+        if (task.subtasks && task.subtasks.length > 0) {
+            const subtaskList = document.createElement('ul');
+            task.subtasks.forEach((subtask, subtaskIndex) => {
+                const subtaskLi = document.createElement('li');
+                // Reset some styles inherited from parent li
+                subtaskLi.style.display = 'flex';
+                subtaskLi.style.alignItems = 'center';
+                subtaskLi.style.gap = '8px';
+                subtaskLi.style.border = 'none';
+                subtaskLi.style.background = 'transparent';
+                subtaskLi.style.boxShadow = 'none';
+
+                if (subtask.completada) subtaskLi.classList.add('done');
+
+                const subtaskCheckbox = document.createElement('input');
+                subtaskCheckbox.type = 'checkbox';
+                subtaskCheckbox.checked = subtask.completada;
+                subtaskCheckbox.addEventListener('change', () => {
+                    this.taskList.tareas[task.index].toggleSubtask(subtaskIndex);
+                    this.taskList.save();
+                    this.render();
+                });
+
+                const subtaskTexto = document.createElement('span');
+                subtaskTexto.textContent = subtask.texto;
+                subtaskTexto.style.flexGrow = '1';
+
+                const subtaskDeleteBtn = document.createElement('button');
+                subtaskDeleteBtn.textContent = '❌';
+                subtaskDeleteBtn.className = 'btn-borrar';
+                subtaskDeleteBtn.addEventListener('click', () => {
+                    this.taskList.tareas[task.index].removeSubtask(subtaskIndex);
+                    this.taskList.save();
+                    this.render();
+                });
+                
+                subtaskLi.appendChild(subtaskCheckbox);
+                subtaskLi.appendChild(subtaskTexto);
+                subtaskLi.appendChild(subtaskDeleteBtn);
+                subtaskList.appendChild(subtaskLi);
+            });
+            subtaskContainer.appendChild(subtaskList);
+        }
+
+        // "Add Subtask" form
+        const addSubtaskForm = document.createElement('form');
+        addSubtaskForm.style.display = 'flex';
+        addSubtaskForm.style.gap = '4px';
+        addSubtaskForm.style.marginTop = '5px';
+        const addSubtaskInput = document.createElement('input');
+        addSubtaskInput.type = 'text';
+        addSubtaskInput.placeholder = 'Nueva subtarea...';
+        addSubtaskInput.style.flexGrow = '1';
+        const addSubtaskBtn = document.createElement('button');
+        addSubtaskBtn.type = 'submit';
+        addSubtaskBtn.textContent = 'Añadir';
+        
+        addSubtaskForm.appendChild(addSubtaskInput);
+        addSubtaskForm.appendChild(addSubtaskBtn);
+
+        addSubtaskForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const subtaskText = addSubtaskInput.value.trim();
+            if (subtaskText) {
+                this.taskList.tareas[task.index].addSubtask(subtaskText);
+                this.taskList.save();
+                this.render();
+                addSubtaskInput.value = '';
+            }
+        });
+
+        subtaskContainer.appendChild(addSubtaskForm);
+        li.appendChild(subtaskContainer);
 
         return li;
     }
