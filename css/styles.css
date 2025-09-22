@@ -200,3 +200,28 @@ button {
   pointer-events: none;
   transition: opacity 0.3s;
 }
+
+.feedback {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    border-radius: 5px;
+    color: white;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.feedback.success {
+    background-color: #4CAF50;
+}
+
+.feedback.error {
+    background-color: #f44336;
+}
+
+.feedback.show {
+    opacity: 1;
+}

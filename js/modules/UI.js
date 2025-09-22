@@ -1,6 +1,7 @@
 export class UI {
     constructor(taskList) {
         this.taskList = taskList;
+        this.draggedIndex = null;
         this.initializeElements();
         this.initializeEventListeners();
     }
@@ -95,6 +96,25 @@ export class UI {
         }
     }
 
+    showFeedback(mensaje, tipo = 'success') {
+        const feedbackElement = document.createElement('div');
+        feedbackElement.textContent = mensaje;
+        feedbackElement.className = `feedback ${tipo}`;
+        document.body.appendChild(feedbackElement);
+
+        // Trigger reflow to enable transition
+        setTimeout(() => {
+            feedbackElement.classList.add('show');
+        }, 10);
+
+        setTimeout(() => {
+            feedbackElement.classList.remove('show');
+            setTimeout(() => {
+                feedbackElement.remove();
+            }, 300);
+        }, 3000);
+    }
+
     getProjectValue() {
         const projectSelect = document.getElementById('projectSelect');
         if (!projectSelect) return null;
@@ -182,6 +202,58 @@ export class UI {
         li.style.display = 'block'; // Override flex display for the main container li
         if (task.completada) li.classList.add('done');
 
+        // Make the li draggable
+        li.draggable = true;
+
+        // Drag and Drop Event Listeners
+        li.addEventListener('dragstart', (e) => {
+            this.draggedIndex = task.index; // Store the original index of the dragged task
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', task.index); // Pass the original index
+            li.classList.add('dragging');
+        });
+
+        li.addEventListener('dragover', (e) => {
+            e.preventDefault(); // Allow drop
+            if (e.target.closest('li') === li) return; // Don't highlight self
+            e.dataTransfer.dropEffect = 'move';
+            // Add visual feedback for drop target
+            const targetLi = e.target.closest('li');
+            if (targetLi && targetLi.dataset.index !== undefined) {
+                targetLi.classList.add('drag-over');
+            }
+        });
+
+        li.addEventListener('dragleave', (e) => {
+            // Remove visual feedback
+            const targetLi = e.target.closest('li');
+            if (targetLi) {
+                targetLi.classList.remove('drag-over');
+            }
+        });
+
+        li.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const fromIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+            const toIndex = parseInt(li.dataset.index, 10); // Get target's original index
+
+            // Clean up drag-over class from all elements
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+
+            if (fromIndex !== toIndex) {
+                this.taskList.updateTaskPosition(fromIndex, toIndex);
+                this.render();
+            }
+        });
+
+        li.addEventListener('dragend', (e) => {
+            li.classList.remove('dragging');
+            // Clean up drag-over class from all elements
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            this.draggedIndex = null;
+        });
+
+
         // Container for the main task row
         const mainTaskRow = document.createElement('div');
         mainTaskRow.style.display = 'flex';
@@ -215,7 +287,7 @@ export class UI {
         deleteBtn.className = 'btn-borrar';
         deleteBtn.addEventListener('click', () => {
             if (confirm('¿Seguro que quieres borrar esta tarea?')) {
-                this.taskList.removeTask(task.index); // <-- BUG FIX
+                this.taskList.removeTask(task.index);
                 this.render();
                 this.showFeedback('Tarea eliminada');
             }
@@ -317,17 +389,5 @@ export class UI {
         li.appendChild(subtaskContainer);
 
         return li;
-    }
-
-    showFeedback(message) {
-        const feedback = document.getElementById('feedback-msg');
-        if (feedback) {
-            feedback.textContent = message;
-            feedback.style.opacity = 1;
-            clearTimeout(feedback._timeout);
-            feedback._timeout = setTimeout(() => {
-                feedback.style.opacity = 0;
-            }, 3000);
-        }
     }
 }
