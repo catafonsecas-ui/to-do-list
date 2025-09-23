@@ -169,8 +169,6 @@ export class Notifications {
 
     showNotification(task) {
         try {
-            console.log('Mostrando notificación para:', task.texto);
-            
             const notification = new Notification("Recordatorio de tarea", {
                 body: `La tarea "${task.texto}" vence ${this.formatDeadline(task.deadline)}`,
                 icon: "/favicon.ico",
@@ -214,11 +212,7 @@ export class Notifications {
     }
 
     calculateNextReminder(deadline, reminderType) {
-        console.log('Calculando recordatorio para deadline:', deadline);
-        console.log('Tipo de recordatorio:', reminderType);
-        
         const deadlineDate = new Date(deadline);
-        console.log('Fecha límite parseada:', deadlineDate);
         
         // Si la fecha no es válida, retornar null
         if (isNaN(deadlineDate.getTime())) {
@@ -254,7 +248,6 @@ export class Notifications {
                 break;
         }
 
-        console.log('Fecha de recordatorio calculada:', date);
         return date.toISOString();
     }
 }

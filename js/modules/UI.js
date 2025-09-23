@@ -97,22 +97,19 @@ export class UI {
     }
 
     showFeedback(mensaje, tipo = 'success') {
-        const feedbackElement = document.createElement('div');
-        feedbackElement.textContent = mensaje;
-        feedbackElement.className = `feedback ${tipo}`;
-        document.body.appendChild(feedbackElement);
-
-        // Trigger reflow to enable transition
-        setTimeout(() => {
-            feedbackElement.classList.add('show');
-        }, 10);
-
-        setTimeout(() => {
-            feedbackElement.classList.remove('show');
+        const el = document.getElementById('feedback-msg');
+        if (el) {
+            el.textContent = mensaje;
+            el.className = `feedback ${tipo}`;
+            // Trigger reflow to enable transition
             setTimeout(() => {
-                feedbackElement.remove();
-            }, 300);
-        }, 3000);
+                el.classList.add('show');
+            }, 10);
+
+            setTimeout(() => {
+                el.classList.remove('show');
+            }, 3000);
+        }
     }
 
     getProjectValue() {
