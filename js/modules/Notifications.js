@@ -125,13 +125,19 @@ export class Notifications {
         }
     }
 
-    showFeedback(message) {
+    showFeedback(message, type = 'success') {
         const el = document.getElementById('feedback-msg');
         if (el) {
             el.textContent = message;
-            el.style.opacity = 1;
-            clearTimeout(el._timeout);
-            el._timeout = setTimeout(() => { el.style.opacity = 0; }, 5000);
+            el.className = `feedback ${type}`;
+            // Trigger reflow to enable transition
+            setTimeout(() => {
+                el.classList.add('show');
+            }, 10);
+
+            setTimeout(() => {
+                el.classList.remove('show');
+            }, 5000);
         }
     }
 

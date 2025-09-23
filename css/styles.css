@@ -138,6 +138,17 @@ span.editable:hover {
   border-bottom: 1px dashed #666; 
 }
 
+.reminder {
+    font-size: 0.8em;
+    color: #666;
+    margin-left: 4px;
+}
+
+#feedback-msg.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 .deadline { 
   font-size: 0.9em; 
   cursor: pointer; 

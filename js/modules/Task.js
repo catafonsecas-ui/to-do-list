@@ -16,6 +16,10 @@ export class Task {
         return this.completada;
     }
 
+    updateText(newText) {
+        this.texto = newText;
+    }
+
     addSubtask(texto) {
         this.subtasks.push({
             texto,

@@ -3,10 +3,10 @@ import { Storage } from './Storage.js';
 import { Notifications } from './Notifications.js';
 
 export class TaskList {
-    constructor() {
+    constructor(notifications) {
         console.log('Inicializando TaskList');
         this.storage = new Storage();
-        this.notifications = new Notifications();
+        this.notifications = notifications;
         this.tareas = [];  // Inicializamos el array vacío
         this.filtro = 'todas';
         this.orden = 'manual';
@@ -16,9 +16,6 @@ export class TaskList {
         // Cargamos las tareas después de inicializar todo
         this.loadTasks();
         console.log('Tareas cargadas:', this.tareas);
-        
-        // Iniciamos las notificaciones después de cargar las tareas
-        this.notifications.startChecking(this);
     }
 
     loadTasks() {
@@ -197,6 +194,13 @@ export class TaskList {
 
     setProjectFilter(project) {
         this.proyectoFiltro = project;
+    }
+
+    updateTaskText(index, text) {
+        if (this.tareas[index]) {
+            this.tareas[index].updateText(text);
+            this.save();
+        }
     }
 
     updateTaskPosition(fromIndex, toIndex) {

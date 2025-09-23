@@ -274,6 +274,14 @@ export class UI {
         const texto = document.createElement('span');
         texto.textContent = task.texto;
         texto.classList.add('texto');
+        texto.addEventListener('click', () => {
+            texto.contentEditable = true;
+            texto.focus();
+        });
+        texto.addEventListener('blur', () => {
+            texto.contentEditable = false;
+            this.taskList.updateTaskText(task.index, texto.textContent);
+        });
         
         const deadline = document.createElement('span');
         deadline.textContent = task.deadline ? new Date(task.deadline).toLocaleString() : '(sin fecha)';
@@ -281,6 +289,27 @@ export class UI {
         if (task.deadline && new Date(task.deadline) < new Date() && !task.completada) {
             deadline.classList.add('overdue');
         }
+
+        mainTaskRow.appendChild(checkbox);
+        mainTaskRow.appendChild(texto);
+        mainTaskRow.appendChild(deadline);
+
+        if (task.recordatorio) {
+            const reminder = document.createElement('span');
+            reminder.textContent = `🔔 ${new Date(task.recordatorio).toLocaleString()}`;
+            reminder.classList.add('reminder');
+            mainTaskRow.appendChild(reminder);
+        }
+
+        if (task.proyecto) {
+            const proyecto = document.createElement('span');
+            proyecto.textContent = `[${task.proyecto}]`;
+            proyecto.classList.add('proyecto');
+            mainTaskRow.appendChild(proyecto);
+        }
+        const spacer = document.createElement('div');
+        spacer.style.flexGrow = '1';
+        mainTaskRow.appendChild(spacer);
 
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = '❌';
@@ -292,19 +321,6 @@ export class UI {
                 this.showFeedback('Tarea eliminada');
             }
         });
-
-        mainTaskRow.appendChild(checkbox);
-        mainTaskRow.appendChild(texto);
-        mainTaskRow.appendChild(deadline);
-        if (task.proyecto) {
-            const proyecto = document.createElement('span');
-            proyecto.textContent = `[${task.proyecto}]`;
-            proyecto.classList.add('proyecto');
-            mainTaskRow.appendChild(proyecto);
-        }
-        const spacer = document.createElement('div');
-        spacer.style.flexGrow = '1';
-        mainTaskRow.appendChild(spacer);
         mainTaskRow.appendChild(deleteBtn);
         
         li.appendChild(mainTaskRow);
@@ -340,6 +356,15 @@ export class UI {
                 const subtaskTexto = document.createElement('span');
                 subtaskTexto.textContent = subtask.texto;
                 subtaskTexto.style.flexGrow = '1';
+                subtaskTexto.addEventListener('click', () => {
+                    subtaskTexto.contentEditable = true;
+                    subtaskTexto.focus();
+                });
+                subtaskTexto.addEventListener('blur', () => {
+                    subtaskTexto.contentEditable = false;
+                    this.taskList.tareas[task.index].updateSubtask(subtaskIndex, subtaskTexto.textContent);
+                    this.taskList.save();
+                });
 
                 const subtaskDeleteBtn = document.createElement('button');
                 subtaskDeleteBtn.textContent = '❌';
