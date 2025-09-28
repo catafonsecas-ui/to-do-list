@@ -145,21 +145,24 @@ export class Notifications {
         if (Notification.permission !== "granted") return;
 
         const now = new Date();
+        console.log('Checking tasks at', now, 'Last check was', this.lastCheck);
+
         const tasks = taskList.tareas.filter(task => {
-            // No notificar tareas completadas o sin recordatorio
             if (task.completada || !task.deadline || !task.recordatorio) return false;
 
             const recordatorioTime = new Date(task.recordatorio);
-            
-            // Verificar si el recordatorio debe mostrarse ahora
+            console.log('Checking task:', task.texto, 'Reminder time:', recordatorioTime);
+
+            let shouldNotify = false;
             if (this.lastCheck) {
-                // El recordatorio debe estar entre la última verificación y ahora
-                return recordatorioTime >= this.lastCheck && recordatorioTime <= now;
+                shouldNotify = recordatorioTime >= this.lastCheck && recordatorioTime <= now;
+                console.log('  - Condition (with lastCheck):', shouldNotify);
             } else {
-                // Primera verificación: mostrar si el recordatorio está dentro del intervalo actual
                 const timeDiff = now - recordatorioTime;
-                return timeDiff >= 0 && timeDiff < this.checkInterval;
+                shouldNotify = timeDiff >= 0 && timeDiff < this.checkInterval;
+                console.log('  - Condition (first check):', shouldNotify);
             }
+            return shouldNotify;
         });
 
         tasks.forEach(task => {
@@ -169,6 +172,8 @@ export class Notifications {
 
     showNotification(task) {
         try {
+            console.log('Mostrando notificación para:', task.texto);
+            
             const notification = new Notification("Recordatorio de tarea", {
                 body: `La tarea "${task.texto}" vence ${this.formatDeadline(task.deadline)}`,
                 icon: "/favicon.ico",
@@ -212,7 +217,11 @@ export class Notifications {
     }
 
     calculateNextReminder(deadline, reminderType) {
+        console.log('Calculando recordatorio para deadline:', deadline);
+        console.log('Tipo de recordatorio:', reminderType);
+        
         const deadlineDate = new Date(deadline);
+        console.log('Fecha límite parseada:', deadlineDate);
         
         // Si la fecha no es válida, retornar null
         if (isNaN(deadlineDate.getTime())) {
@@ -248,6 +257,7 @@ export class Notifications {
                 break;
         }
 
+        console.log('Fecha de recordatorio calculada:', date);
         return date.toISOString();
     }
 }

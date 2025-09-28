@@ -1,114 +1,109 @@
 import { Task } from './Task.js';
 import { Storage } from './Storage.js';
-import { Notifications } from './Notifications.js';
 
 export class TaskList {
     constructor(notifications) {
-        console.log('Inicializando TaskList');
         this.storage = new Storage();
         this.notifications = notifications;
-        this.tareas = [];  // Inicializamos el array vacío
-        this.filtro = 'todas';
+        this.tareas = [];
+        this.projects = [];
+        this.filtro = 'all';
         this.orden = 'manual';
-        this.proyectoFiltro = 'todas';
-        this.dragIndex = null;
-        
-        // Cargamos las tareas después de inicializar todo
+        this.proyectoFiltro = 'all';
         this.loadTasks();
-        console.log('Tareas cargadas:', this.tareas);
+        this.loadProjects();
     }
 
     loadTasks() {
-        try {
-            console.log('Intentando cargar tareas desde Storage');
-            const loadedTasks = this.storage.getTasks();
-            console.log('Tareas obtenidas de Storage:', loadedTasks);
-            
-            if (!Array.isArray(loadedTasks)) {
-                console.error('Las tareas cargadas no son un array');
-                this.tareas = [];
-                return;
-            }
-
-            // Limpiar localStorage si hay datos corruptos
-            if (loadedTasks.some(task => typeof task !== 'object' || task === null)) {
-                console.error('Datos corruptos detectados en localStorage');
-                this.storage.saveTasks([]);
-                this.tareas = [];
-                return;
-            }
-
+        const loadedTasks = this.storage.getTasks();
+        if (Array.isArray(loadedTasks)) {
             this.tareas = loadedTasks.map(taskData => {
-                try {
-                    // Verificar y limpiar los datos
-                    const cleanData = {
-                        texto: String(taskData.texto || '').trim(),
-                        deadline: taskData.deadline ? new Date(taskData.deadline).toISOString() : null,
-                        prioridad: ['alta', 'media', 'baja'].includes(taskData.prioridad) ? taskData.prioridad : 'media',
-                        proyecto: taskData.proyecto ? String(taskData.proyecto).trim() : null
-                    };
-
-                    // Si no hay texto, ignorar la tarea
-                    if (!cleanData.texto) {
-                        console.error('Tarea sin texto:', taskData);
-                        return null;
-                    }
-
-                    const task = new Task(
-                        cleanData.texto,
-                        cleanData.deadline,
-                        cleanData.prioridad,
-                        cleanData.proyecto
-                    );
-
-                    // Restaurar y validar todas las propiedades adicionales
-                    task.id = taskData.id || Date.now().toString() + Math.random().toString(36).substr(2, 9);
-                    task.completada = Boolean(taskData.completada);
-                    task.subtasks = Array.isArray(taskData.subtasks) ? 
-                        taskData.subtasks.filter(st => st && typeof st === 'object' && st.texto).map(st => ({
-                            texto: String(st.texto).trim(),
-                            completada: Boolean(st.completada)
-                        })) : [];
-                    task.descripcion = taskData.descripcion ? String(taskData.descripcion).trim() : '';
-                    task.recordatorio = taskData.recordatorio ? new Date(taskData.recordatorio).toISOString() : null;
-
-                    return task;
-                } catch (error) {
-                    console.error('Error al procesar tarea:', taskData, error);
-                    return null;
-                }
-            }).filter(task => task !== null); // Eliminar tareas inválidas
-
-            console.log('Tareas procesadas y cargadas:', this.tareas);
-        } catch (error) {
-            console.error('Error al cargar tareas:', error);
-            this.tareas = [];
+                const task = new Task(taskData.texto);
+                Object.assign(task, taskData);
+                return task;
+            });
         }
     }
 
-    addTask(texto, deadline, prioridad, proyecto) {
-        console.log('Creando nueva tarea:', { texto, deadline, prioridad, proyecto });
-        const task = new Task(texto, deadline, prioridad, proyecto);
-        console.log('Tarea creada:', task);
+    loadProjects() {
+        const loadedProjects = this.storage.getProjects();
+        if (Array.isArray(loadedProjects)) {
+            this.projects = loadedProjects;
+        }
+    }
+
+    addTask(details) {
+        console.log('TaskList - addTask received details:', details);
+        const task = new Task(details.texto);
+        task.deadline = details.deadline;
+        task.prioridad = details.prioridad;
+        task.recordatorio = details.recordatorio;
+        task.proyecto = details.proyecto;
         this.tareas.push(task);
-        console.log('Tareas actualizadas:', this.tareas);
         this.save();
+        console.log('TaskList - Task added:', task);
         return task;
     }
 
-    removeTask(index) {
-        console.log('Intentando eliminar tarea en índice:', index);
-        console.log('Tareas antes de eliminar:', this.tareas);
-        
-        if (index >= 0 && index < this.tareas.length) {
-            const removedTask = this.tareas.splice(index, 1)[0];
-            console.log('Tarea eliminada:', removedTask);
-            console.log('Tareas después de eliminar:', this.tareas);
+    toggleTask(taskId) {
+        const task = this.tareas.find(t => t.id === taskId);
+        if (task) {
+            task.toggle();
             this.save();
-            return true;
         }
-        console.log('Índice fuera de rango:', index, 'longitud de tareas:', this.tareas.length);
-        return false;
+    }
+
+    removeTask(taskId) {
+        this.tareas = this.tareas.filter(t => t.id !== taskId);
+        this.save();
+    }
+
+    updateTaskText(taskId, text) {
+        const task = this.tareas.find(t => t.id === taskId);
+        if (task) {
+            task.updateText(text);
+            this.save();
+        }
+    }
+
+    updateTaskDetails(taskId, details) {
+        const task = this.tareas.find(t => t.id === taskId);
+        if (task) {
+            Object.assign(task, details);
+            this.save();
+        }
+    }
+
+    addSubtask(taskId, subtaskText) {
+        const task = this.tareas.find(t => t.id === taskId);
+        if (task) {
+            task.addSubtask(subtaskText);
+            this.save();
+        }
+    }
+
+    toggleSubtask(taskId, subtaskIndex) {
+        const task = this.tareas.find(t => t.id === taskId);
+        if (task) {
+            task.toggleSubtask(subtaskIndex);
+            this.save();
+        }
+    }
+
+    updateSubtask(taskId, subtaskIndex, subtaskText) {
+        const task = this.tareas.find(t => t.id === taskId);
+        if (task) {
+            task.updateSubtask(subtaskIndex, subtaskText);
+            this.save();
+        }
+    }
+
+    removeSubtask(taskId, subtaskIndex) {
+        const task = this.tareas.find(t => t.id === taskId);
+        if (task) {
+            task.removeSubtask(subtaskIndex);
+            this.save();
+        }
     }
 
     clearCompleted() {
@@ -117,71 +112,34 @@ export class TaskList {
     }
 
     getFilteredAndSortedTasks() {
-        console.log('Obteniendo tareas filtradas y ordenadas');
-        console.log('Tareas originales:', this.tareas);
+        let tasks = [...this.tareas];
 
-        if (!Array.isArray(this.tareas)) {
-            console.error('this.tareas no es un array');
-            return [];
+        // Apply filters
+        if (this.filtro === 'today') {
+            const today = new Date().toISOString().slice(0, 10);
+            tasks = tasks.filter(t => t.deadline && t.deadline.slice(0, 10) === today);
+        } else if (this.filtro === 'upcoming') {
+            const today = new Date().toISOString().slice(0, 10);
+            tasks = tasks.filter(t => t.deadline && t.deadline.slice(0, 10) > today);
         }
 
-        let listaTareas = this.tareas.map((t, index) => {
-            if (!(t instanceof Task)) {
-                console.error('Elemento no es instancia de Task:', t);
-                return null;
-            }
-            return {...t, index};
-        }).filter(t => t !== null);
+        if (this.proyectoFiltro !== 'all') {
+            tasks = tasks.filter(t => t.proyecto === this.proyectoFiltro);
+        }
 
-        console.log('Tareas mapeadas:', listaTareas);
-
-        // Aplicar filtros
-        listaTareas = listaTareas.filter(t => {
-            if (t.hidden && !t.texto) return false; // Ocultar tareas especiales de proyecto
-            if (this.filtro === 'pendientes' && t.completada) return false;
-            if (this.filtro === 'completadas' && !t.completada) return false;
-            if (this.proyectoFiltro !== 'todas' && t.proyecto !== this.proyectoFiltro) return false;
-            return true;
-        });
-
-        // Aplicar ordenamiento
+        // Apply sorting
         if (this.orden === 'fecha') {
-            listaTareas.sort((a, b) => {
-                if (!a.deadline && !b.deadline) return a.index - b.index;
-                if (!a.deadline) return 1;
-                if (!b.deadline) return -1;
-                const dateA = new Date(a.deadline);
-                const dateB = new Date(b.deadline);
-                const cmp = dateA - dateB;
-                return cmp !== 0 ? cmp : (a.index - b.index);
-            });
+            tasks.sort((a, b) => (a.deadline || 'zz').localeCompare(b.deadline || 'zz'));
         } else if (this.orden === 'prioridad') {
-            const prioridadOrden = { alta: 1, media: 2, baja: 3 };
-            listaTareas.sort((a, b) => {
-                const aP = prioridadOrden[a.prioridad] ?? 4;
-                const bP = prioridadOrden[b.prioridad] ?? 4;
-                if (aP !== bP) return aP - bP;
-                if (a.deadline && b.deadline) {
-                    const cmp = a.deadline.localeCompare(b.deadline);
-                    return cmp !== 0 ? cmp : (a.index - b.index);
-                }
-                if (a.deadline && !b.deadline) return -1;
-                if (!a.deadline && b.deadline) return 1;
-                return a.index - b.index;
-            });
+            const priorityOrder = { 'alta': 1, 'media': 2, 'baja': 3 };
+            tasks.sort((a, b) => (priorityOrder[a.prioridad] || 4) - (priorityOrder[b.prioridad] || 4));
         }
 
-        return listaTareas;
+        return tasks;
     }
 
     getUniqueProjects() {
-        const projects = Array.from(new Set(
-            this.tareas
-                .filter(t => t.proyecto && (!t.hidden || t.texto))
-                .map(t => t.proyecto)
-        )).sort();
-        console.log('Proyectos únicos encontrados:', projects);
-        return projects;
+        return this.projects;
     }
 
     setFilter(filter) {
@@ -196,49 +154,18 @@ export class TaskList {
         this.proyectoFiltro = project;
     }
 
-    updateTaskText(index, text) {
-        if (this.tareas[index]) {
-            this.tareas[index].updateText(text);
-            this.save();
+    addProject(projectName) {
+        if (!this.projects.includes(projectName)) {
+            this.projects.push(projectName);
+            this.saveProjects();
         }
-    }
-
-    updateTaskPosition(fromIndex, toIndex) {
-        if (fromIndex !== toIndex && fromIndex >= 0 && toIndex >= 0) {
-            const [moved] = this.tareas.splice(fromIndex, 1);
-            this.tareas.splice(toIndex, 0, moved);
-            this.save();
-            return true;
-        }
-        return false;
     }
 
     save() {
         this.storage.saveTasks(this.tareas);
     }
 
-    addProject(projectName) {
-        console.log('Intentando añadir nuevo proyecto:', projectName);
-        if (!projectName || projectName.trim() === '') {
-            console.error('Nombre de proyecto vacío');
-            return false;
-        }
-
-        projectName = projectName.trim();
-        const projects = this.getUniqueProjects();
-        
-        if (projects.includes(projectName)) {
-            console.log('El proyecto ya existe:', projectName);
-            return false;
-        }
-
-        // Crear una tarea especial para mantener el proyecto
-        const task = new Task('', null, 'media', projectName);
-        task.hidden = true;
-        this.tareas.push(task);
-        this.save();
-        
-        console.log('Proyecto añadido:', projectName);
-        return true;
+    saveProjects() {
+        this.storage.saveProjects(this.projects);
     }
 }

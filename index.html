@@ -2,108 +2,67 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <title>To-Do con Proyectos, Prioridad y Deadlines</title>
+  <title>To-Do List</title>
   <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <h1>Lista de Tareas</h1>
-
-  <!-- Formulario: texto, fecha, prioridad, proyecto -->
-  <form id="form" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <div style="flex:1;min-width:180px">
-      <label for="taskInput">Nueva tarea</label>
-      <input id="taskInput" name="taskInput" placeholder="Escribe aquí tu tarea..." required>
-    </div>
-    
-    <div style="display:flex;gap:4px">
-      <div>
-        <label for="dateInput">Fecha límite</label>
-        <input type="date" id="dateInput" name="dateInput">
-      </div>
-      <div>
-        <label for="timeInput">Hora límite</label>
-        <input type="time" id="timeInput" name="timeInput">
-      </div>
-    </div>
-    
-    <div>
-      <label for="priorityInput">Prioridad</label>
-      <select id="priorityInput" name="priorityInput">
-        <option value="alta">🔴 Alta</option>
-        <option value="media" selected>🟡 Media</option>
-        <option value="baja">🟢 Baja</option>
-      </select>
-    </div>
-
-    <div>
-      <label for="reminderInput">Recordatorio</label>
-      <select id="reminderInput" name="reminderInput">
-        <option value="">Sin recordatorio</option>
-        <option value="5min">5 minutos antes</option>
-        <option value="15min">15 minutos antes</option>
-        <option value="30min">30 minutos antes</option>
-        <option value="1hour">1 hora antes</option>
-        <option value="2hours">2 horas antes</option>
-        <option value="1day">1 día antes</option>
-        <option value="2days">2 días antes</option>
-        <option value="1week">1 semana antes</option>
-      </select>
-    </div>
-    
-    <div style="display:flex;align-items:center;gap:4px;min-width:120px">
-      <div>
-        <label for="projectSelect">Proyecto</label>
-        <select id="projectSelect" name="projectSelect" style="min-width:120px">
-          <option value="">Sin proyecto</option>
-          <option value="__nueva__">+ Nueva categoría...</option>
-        </select>
-      </div>
-      <div id="projectInputContainer" style="display:none">
-        <label for="projectInput">Nuevo proyecto</label>
-        <input id="projectInput" name="projectInput" placeholder="Nombre del proyecto" style="min-width:120px">
-      </div>
-    </div>
-    
-    <button type="submit" style="background:#2a7be4;color:white;border:none;padding:8px 16px;border-radius:4px">
-        Añadir tarea
-    </button>
-  </form>
-  
-  <div class="controls">
-    <div>
-      <button id="clearCompleted">Borrar Completadas</button>
-    </div>
-
-    <div>
-      <label>Filtro: </label>
-      <select id="filter">
-        <option value="todas">Todas</option>
-        <option value="pendientes">Pendientes</option>
-        <option value="completadas">Completadas</option>
-      </select>
-    </div>
-
-    <div>
-      <label>Proyecto: </label>
-      <select id="projectFilter">
-        <option value="todas">Todas</option>
-      </select>
-    </div>
-
-    <div>
-      <label>Orden: </label>
-      <select id="sort">
-        <option value="manual">Manual</option>
-        <option value="fecha">Por fecha límite</option>
-        <option value="prioridad">Por prioridad</option>
-      </select>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>To-Do List</h1>
+    </header>
+    <div class="app-content">
+      <nav class="sidebar">
+        <div class="sidebar-section">
+          <h2 class="sidebar-title">Filters</h2>
+          <ul class="filter-list">
+            <li><a href="#" id="filter-all" class="active">All</a></li>
+            <li><a href="#" id="filter-today">Today</a></li>
+            <li><a href="#" id="filter-upcoming">Upcoming</a></li>
+          </ul>
+        </div>
+        <div class="sidebar-section">
+          <h2 class="sidebar-title">Projects</h2>
+          <ul id="project-list" class="project-list">
+            <!-- Projects will be dynamically inserted here -->
+          </ul>
+          <div id="projectInputContainer" style="display:none">
+            <input id="projectInput" name="projectInput" placeholder="New project name">
+          </div>
+          <button id="new-project-btn">+ New Project</button>
+        </div>
+      </nav>
+      <main class="main-content">
+        <form id="form">
+          <input type="text" id="new-task-input" placeholder="New Task">
+          <select id="new-task-priority">
+            <option value="alta">High</option>
+            <option value="media" selected>Medium</option>
+            <option value="baja">Low</option>
+          </select>
+          <button type="button" id="new-task-btn">Add Task</button>
+        </form>
+        <div class="task-list-header">
+          <div class="controls">
+            <div>
+              <label>Sort by: </label>
+              <select id="sort">
+                <option value="manual">Manual</option>
+                <option value="fecha">Due Date</option>
+                <option value="prioridad">Priority</option>
+              </select>
+            </div>
+            <div>
+              <button id="clearCompleted">Clear Completed</button>
+            </div>
+          </div>
+        </div>
+        <ul id="lista"></ul>
+      </main>
     </div>
   </div>
-
-
-  <ul id="lista"></ul>
-  <div id="feedback-msg">Mensaje</div>
+  <div id="feedback-msg"></div>
 
   <script type="module" src="js/app.js"></script>
 </body>

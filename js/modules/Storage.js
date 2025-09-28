@@ -43,11 +43,21 @@ export class Storage {
         }
     }
 
-    getLastProject() {
-        return localStorage.getItem('ultima_categoria') || '';
+    getProjects() {
+        try {
+            const projectsJson = localStorage.getItem('mis_proyectos') || '[]';
+            return JSON.parse(projectsJson);
+        } catch (error) {
+            console.error('Error al cargar proyectos:', error);
+            return [];
+        }
     }
 
-    saveLastProject(project) {
-        localStorage.setItem('ultima_categoria', project);
+    saveProjects(projects) {
+        try {
+            localStorage.setItem('mis_proyectos', JSON.stringify(projects));
+        } catch (error) {
+            console.error('Error al guardar proyectos:', error);
+        }
     }
 }
