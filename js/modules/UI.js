@@ -11,7 +11,7 @@ class UI {
             const taskText = this.newTaskInput.value.trim();
             const priority = this.newTaskPriority.value;
             if (taskText) {
-                this.taskList.addTask({ texto: taskText, prioridad: priority });
+                this.taskList.addTask({ text: taskText, priority: priority });
                 this.render();
                 this.newTaskInput.value = '';
             }
@@ -36,12 +36,12 @@ class UI {
             const taskElement = document.createElement('li');
 
             const taskText = document.createElement('span');
-            taskText.textContent = task.texto;
-            this.createEditable(taskText, task, 'texto', 'text');
+            taskText.textContent = task.text;
+            this.createEditable(taskText, task, 'text', 'text');
 
             const taskPriority = document.createElement('span');
-            taskPriority.textContent = task.prioridad;
-            this.createEditable(taskPriority, task, 'prioridad', 'select', ['alta', 'media', 'baja']);
+            taskPriority.textContent = task.priority;
+            this.createEditable(taskPriority, task, 'priority', 'select', ['high', 'medium', 'low']);
 
             const deleteButton = document.createElement('button');
             deleteButton.textContent = 'Delete';

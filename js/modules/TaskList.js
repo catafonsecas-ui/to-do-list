@@ -5,11 +5,11 @@ export class TaskList {
     constructor(notifications) {
         this.storage = new Storage();
         this.notifications = notifications;
-        this.tareas = [];
+        this.tasks = [];
         this.projects = [];
-        this.filtro = 'all';
-        this.orden = 'manual';
-        this.proyectoFiltro = 'all';
+        this.filter = 'all';
+        this.sort = 'manual';
+        this.projectFilter = 'all';
         this.loadTasks();
         this.loadProjects();
     }
@@ -17,8 +17,8 @@ export class TaskList {
     loadTasks() {
         const loadedTasks = this.storage.getTasks();
         if (Array.isArray(loadedTasks)) {
-            this.tareas = loadedTasks.map(taskData => {
-                const task = new Task(taskData.texto);
+            this.tasks = loadedTasks.map(taskData => {
+                const task = new Task(taskData.text);
                 Object.assign(task, taskData);
                 return task;
             });
@@ -34,19 +34,19 @@ export class TaskList {
 
     addTask(details) {
         console.log('TaskList - addTask received details:', details);
-        const task = new Task(details.texto);
+        const task = new Task(details.text);
         task.deadline = details.deadline;
-        task.prioridad = details.prioridad;
-        task.recordatorio = details.recordatorio;
-        task.proyecto = details.proyecto;
-        this.tareas.push(task);
+        task.priority = details.priority;
+        task.reminder = details.reminder;
+        task.project = details.project;
+        this.tasks.push(task);
         this.save();
         console.log('TaskList - Task added:', task);
         return task;
     }
 
     toggleTask(taskId) {
-        const task = this.tareas.find(t => t.id === taskId);
+        const task = this.tasks.find(t => t.id === taskId);
         if (task) {
             task.toggle();
             this.save();
@@ -54,12 +54,12 @@ export class TaskList {
     }
 
     removeTask(taskId) {
-        this.tareas = this.tareas.filter(t => t.id !== taskId);
+        this.tasks = this.tasks.filter(t => t.id !== taskId);
         this.save();
     }
 
     updateTaskText(taskId, text) {
-        const task = this.tareas.find(t => t.id === taskId);
+        const task = this.tasks.find(t => t.id === taskId);
         if (task) {
             task.updateText(text);
             this.save();
@@ -67,7 +67,7 @@ export class TaskList {
     }
 
     updateTaskDetails(taskId, details) {
-        const task = this.tareas.find(t => t.id === taskId);
+        const task = this.tasks.find(t => t.id === taskId);
         if (task) {
             Object.assign(task, details);
             this.save();
@@ -75,7 +75,7 @@ export class TaskList {
     }
 
     addSubtask(taskId, subtaskText) {
-        const task = this.tareas.find(t => t.id === taskId);
+        const task = this.tasks.find(t => t.id === taskId);
         if (task) {
             task.addSubtask(subtaskText);
             this.save();
@@ -83,7 +83,7 @@ export class TaskList {
     }
 
     toggleSubtask(taskId, subtaskIndex) {
-        const task = this.tareas.find(t => t.id === taskId);
+        const task = this.tasks.find(t => t.id === taskId);
         if (task) {
             task.toggleSubtask(subtaskIndex);
             this.save();
@@ -91,7 +91,7 @@ export class TaskList {
     }
 
     updateSubtask(taskId, subtaskIndex, subtaskText) {
-        const task = this.tareas.find(t => t.id === taskId);
+        const task = this.tasks.find(t => t.id === taskId);
         if (task) {
             task.updateSubtask(subtaskIndex, subtaskText);
             this.save();
@@ -99,7 +99,7 @@ export class TaskList {
     }
 
     removeSubtask(taskId, subtaskIndex) {
-        const task = this.tareas.find(t => t.id === taskId);
+        const task = this.tasks.find(t => t.id === taskId);
         if (task) {
             task.removeSubtask(subtaskIndex);
             this.save();
@@ -107,32 +107,32 @@ export class TaskList {
     }
 
     clearCompleted() {
-        this.tareas = this.tareas.filter(t => !t.completada);
+        this.tasks = this.tasks.filter(t => !t.completed);
         this.save();
     }
 
     getFilteredAndSortedTasks() {
-        let tasks = [...this.tareas];
+        let tasks = [...this.tasks];
 
         // Apply filters
-        if (this.filtro === 'today') {
+        if (this.filter === 'today') {
             const today = new Date().toISOString().slice(0, 10);
             tasks = tasks.filter(t => t.deadline && t.deadline.slice(0, 10) === today);
-        } else if (this.filtro === 'upcoming') {
+        } else if (this.filter === 'upcoming') {
             const today = new Date().toISOString().slice(0, 10);
             tasks = tasks.filter(t => t.deadline && t.deadline.slice(0, 10) > today);
         }
 
-        if (this.proyectoFiltro !== 'all') {
-            tasks = tasks.filter(t => t.proyecto === this.proyectoFiltro);
+        if (this.projectFilter !== 'all') {
+            tasks = tasks.filter(t => t.project === this.projectFilter);
         }
 
         // Apply sorting
-        if (this.orden === 'fecha') {
+        if (this.sort === 'dueDate') {
             tasks.sort((a, b) => (a.deadline || 'zz').localeCompare(b.deadline || 'zz'));
-        } else if (this.orden === 'prioridad') {
-            const priorityOrder = { 'alta': 1, 'media': 2, 'baja': 3 };
-            tasks.sort((a, b) => (priorityOrder[a.prioridad] || 4) - (priorityOrder[b.prioridad] || 4));
+        } else if (this.sort === 'priority') {
+            const priorityOrder = { 'high': 1, 'medium': 2, 'low': 3 };
+            tasks.sort((a, b) => (priorityOrder[a.priority] || 4) - (priorityOrder[b.priority] || 4));
         }
 
         return tasks;
@@ -143,15 +143,15 @@ export class TaskList {
     }
 
     setFilter(filter) {
-        this.filtro = filter;
+        this.filter = filter;
     }
 
-    setOrder(order) {
-        this.orden = order;
+    setSort(sort) {
+        this.sort = sort;
     }
 
     setProjectFilter(project) {
-        this.proyectoFiltro = project;
+        this.projectFilter = project;
     }
 
     addProject(projectName) {
@@ -162,7 +162,7 @@ export class TaskList {
     }
 
     save() {
-        this.storage.saveTasks(this.tareas);
+        this.storage.saveTasks(this.tasks);
     }
 
     saveProjects() {

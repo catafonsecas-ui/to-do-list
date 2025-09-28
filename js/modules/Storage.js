@@ -1,5 +1,5 @@
 export class Storage {
-    constructor(key = 'mis_tareas') {
+    constructor(key = 'my_tasks') {
         this.STORAGE_KEY = key;
     }
 
@@ -8,7 +8,6 @@ export class Storage {
             const tasksJson = localStorage.getItem(this.STORAGE_KEY) || '[]';
             const tasks = JSON.parse(tasksJson);
             
-            // Asegurarse de que cada tarea tenga un ID
             tasks.forEach(task => {
                 if (!task.id) {
                     task.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
@@ -17,47 +16,46 @@ export class Storage {
             
             return tasks;
         } catch (error) {
-            console.error('Error al cargar tareas:', error);
+            console.error('Error loading tasks:', error);
             return [];
         }
     }
 
     saveTasks(tasks) {
         try {
-            // Asegurarse de que todas las tareas son objetos Task válidos
             const cleanTasks = tasks.map(task => ({
                 id: task.id || Date.now().toString() + Math.random().toString(36).substr(2, 9),
-                texto: task.texto || '',
-                completada: Boolean(task.completada),
+                text: task.text || '',
+                completed: Boolean(task.completed),
                 deadline: task.deadline || null,
-                prioridad: task.prioridad || 'media',
-                proyecto: task.proyecto || null,
+                priority: task.priority || 'medium',
+                project: task.project || null,
                 subtasks: Array.isArray(task.subtasks) ? task.subtasks : [],
-                descripcion: task.descripcion || '',
-                recordatorio: task.recordatorio || null
+                description: task.description || '',
+                reminder: task.reminder || null
             }));
             
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cleanTasks));
         } catch (error) {
-            console.error('Error al guardar tareas:', error);
+            console.error('Error saving tasks:', error);
         }
     }
 
     getProjects() {
         try {
-            const projectsJson = localStorage.getItem('mis_proyectos') || '[]';
+            const projectsJson = localStorage.getItem('my_projects') || '[]';
             return JSON.parse(projectsJson);
         } catch (error) {
-            console.error('Error al cargar proyectos:', error);
+            console.error('Error loading projects:', error);
             return [];
         }
     }
 
     saveProjects(projects) {
         try {
-            localStorage.setItem('mis_proyectos', JSON.stringify(projects));
+            localStorage.setItem('my_projects', JSON.stringify(projects));
         } catch (error) {
-            console.error('Error al guardar proyectos:', error);
-        }
+            console.error('Error saving projects:', error);
+        }    
     }
 }

@@ -1,36 +1,36 @@
 export class Task {
-    constructor(texto) {
+    constructor(text) {
         this.id = Date.now().toString();
-        this.texto = texto;
-        this.completada = false;
+        this.text = text;
+        this.completed = false;
         this.deadline = null;
-        this.prioridad = 'media';
-        this.proyecto = null;
+        this.priority = 'medium';
+        this.project = null;
         this.subtasks = [];
-        this.recordatorio = null;
+        this.reminder = null;
     }
 
     toggle() {
-        this.completada = !this.completada;
+        this.completed = !this.completed;
     }
 
     updateText(newText) {
-        this.texto = newText;
+        this.text = newText;
     }
 
-    addSubtask(texto) {
-        this.subtasks.push({ texto, completada: false });
+    addSubtask(text) {
+        this.subtasks.push({ text, completed: false });
     }
 
     toggleSubtask(index) {
         if (this.subtasks[index]) {
-            this.subtasks[index].completada = !this.subtasks[index].completada;
+            this.subtasks[index].completed = !this.subtasks[index].completed;
         }
     }
 
-    updateSubtask(index, texto) {
+    updateSubtask(index, text) {
         if (this.subtasks[index]) {
-            this.subtasks[index].texto = texto;
+            this.subtasks[index].text = text;
         }
     }
 
