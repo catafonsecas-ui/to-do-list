@@ -27,10 +27,7 @@
           <ul id="project-list" class="project-list">
             <!-- Projects will be dynamically inserted here -->
           </ul>
-          <div id="projectInputContainer" style="display:none">
-            <input id="projectInput" name="projectInput" placeholder="New project name">
-          </div>
-          <button id="new-project-btn">+ New Project</button>
+
         </div>
       </nav>
       <main class="main-content">
@@ -41,8 +38,15 @@
             <option value="medium" selected>Medium</option>
             <option value="low">Low</option>
           </select>
+          <select id="new-task-project">
+            <!-- Projects will be dynamically inserted here -->
+          </select>
+          <input type="date" id="new-task-deadline">
           <button type="button" id="new-task-btn">Add Task</button>
         </form>
+        <div id="projectInputContainer" style="display:none">
+          <input id="projectInput" name="projectInput" placeholder="New project name">
+        </div>
         <div class="task-list-header">
           <div class="controls">
             <div>

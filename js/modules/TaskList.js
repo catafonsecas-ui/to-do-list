@@ -161,6 +161,35 @@ export class TaskList {
         }
     }
 
+    updateProjectName(oldName, newName) {
+        const projectIndex = this.projects.indexOf(oldName);
+        if (projectIndex !== -1) {
+            this.projects[projectIndex] = newName;
+        }
+    
+        this.tasks.forEach(task => {
+            if (task.project === oldName) {
+                task.project = newName;
+            }
+        });
+    
+        this.save();
+        this.saveProjects();
+    }
+
+    deleteProject(projectName) {
+        this.projects = this.projects.filter(p => p !== projectName);
+    
+        this.tasks.forEach(task => {
+            if (task.project === projectName) {
+                task.project = '';
+            }
+        });
+    
+        this.save();
+        this.saveProjects();
+    }
+
     save() {
         this.storage.saveTasks(this.tasks);
     }
