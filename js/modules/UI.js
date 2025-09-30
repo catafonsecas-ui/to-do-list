@@ -2,73 +2,65 @@ class UI {
     constructor(taskList) {
         this.taskList = taskList;
         this.app = document.getElementById('app');
-        this.form = document.getElementById('form');
-        this.newTaskBtn = document.getElementById('new-task-btn');
-        this.newTaskInput = document.getElementById('new-task-input');
-        this.newTaskPriority = document.getElementById('new-task-priority');
-        this.newTaskProject = document.getElementById('new-task-project');
-        this.newTaskDeadline = document.getElementById('new-task-deadline');
 
-        const addTaskHandler = () => {
-            const taskText = this.newTaskInput.value.trim();
-            const priority = this.newTaskPriority.value;
-            const project = this.newTaskProject.value;
-            const deadline = this.newTaskDeadline.value;
-            if (taskText) {
-                this.taskList.addTask({ text: taskText, priority: priority, project: project, deadline: deadline });
-                this.render();
-                this.newTaskInput.value = '';
-                this.newTaskDeadline.value = '';
-            }
-        };
+        // Modal elements
+        this.addTaskBtn = document.getElementById('add-task-btn');
+        this.modal = document.getElementById('new-task-modal');
+        this.closeModalBtn = document.getElementById('close-modal-btn');
+        this.modalAddTaskBtn = document.getElementById('modal-add-task-btn');
+        
+        this.modalNewTaskInput = document.getElementById('modal-new-task-input');
+        this.modalNewTaskPriority = document.getElementById('modal-new-task-priority');
+        this.modalNewTaskProject = document.getElementById('modal-new-task-project');
+        this.modalNewTaskDeadline = document.getElementById('modal-new-task-deadline');
 
-        this.newTaskBtn.addEventListener('click', addTaskHandler);
-
-        this.newTaskInput.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                addTaskHandler();
-            }
-        });
-
-        this.newTaskProject.addEventListener('change', () => {
-            console.log('New task project dropdown changed, value:', this.newTaskProject.value);
-            if (this.newTaskProject.value === 'new-project') {
-                console.log('Creating new project input for new task');
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.placeholder = 'New project name';
-                this.newTaskProject.replaceWith(input);
-                input.focus();
-                
-                const handleNewProject = (event) => {
-                    if (event.key === 'Enter') {
-                        event.preventDefault();
-                        const newProject = input.value.trim();
-                        if (newProject) {
-                            this.taskList.addProject(newProject);
-                            this.renderProjects();
-                            this.newTaskProject.value = newProject;
-                        }
-                        this.render(); // Re-render to show the select again
-                    }
-                };
-                input.addEventListener('keydown', handleNewProject);
-                input.addEventListener('blur', () => {
-                    this.render();
-                });
-            }
-        });
+        // Event listeners
+        this.addTaskBtn.addEventListener('click', () => this.openModal());
+        this.closeModalBtn.addEventListener('click', () => this.closeModal());
+        this.modalAddTaskBtn.addEventListener('click', () => this.addTaskHandler());
 
         const setPriorityColor = () => {
-            this.newTaskPriority.classList.remove('priority-high', 'priority-medium', 'priority-low');
-            this.newTaskPriority.classList.add(`priority-${this.newTaskPriority.value}`);
+            this.modalNewTaskPriority.classList.remove('priority-high', 'priority-medium', 'priority-low');
+            this.modalNewTaskPriority.classList.add(`priority-${this.modalNewTaskPriority.value}`);
         };
 
-        this.newTaskPriority.addEventListener('change', setPriorityColor);
+        this.modalNewTaskPriority.addEventListener('change', setPriorityColor);
 
         // Set initial color
         setPriorityColor();
+    }
+
+    openModal() {
+        this.renderProjects(); // Update projects in modal dropdown
+        this.modal.style.display = 'block';
+    }
+
+    closeModal() {
+        this.modal.style.display = 'none';
+    }
+
+    addTaskHandler() {
+        const taskText = this.modalNewTaskInput.value.trim();
+        const priority = this.modalNewTaskPriority.value;
+        const project = this.modalNewTaskProject.value;
+        const deadline = this.modalNewTaskDeadline.value;
+
+        if (taskText) {
+            if (project === 'new-project') {
+                const newProject = prompt('Enter new project name:');
+                if (newProject) {
+                    this.taskList.addProject(newProject);
+                    this.taskList.addTask({ text: taskText, priority: priority, project: newProject, deadline: deadline });
+                }
+            } else {
+                this.taskList.addTask({ text: taskText, priority: priority, project: project, deadline: deadline });
+            }
+            this.render();
+            this.closeModal();
+            // Clear modal form fields
+            this.modalNewTaskInput.value = '';
+            this.modalNewTaskDeadline.value = '';
+        }
     }
 
     render() {
@@ -79,8 +71,20 @@ class UI {
 
         tasks.forEach(task => {
             const taskElement = document.createElement('li');
+            if (task.completed) {
+                taskElement.classList.add('completed');
+            }
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = task.completed;
+            checkbox.addEventListener('change', () => {
+                this.taskList.toggleTask(task.id);
+                this.render();
+            });
 
             const taskText = document.createElement('span');
+            taskText.classList.add('texto');
             taskText.textContent = task.text;
             this.createEditable(taskText, task, 'text', 'text');
 
@@ -102,12 +106,14 @@ class UI {
             this.createEditable(taskDeadline, task, 'deadline', 'date');
 
             const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Delete';
+            deleteButton.classList.add('delete-btn');
+            deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
             deleteButton.addEventListener('click', () => {
                 this.taskList.removeTask(task.id);
                 this.render();
             });
 
+            taskElement.appendChild(checkbox);
             taskElement.appendChild(taskText);
             taskElement.appendChild(priorityContainer);
             taskElement.appendChild(taskProject);
@@ -120,69 +126,73 @@ class UI {
     renderProjects() {
         const projects = this.taskList.getUniqueProjects();
         const projectListElement = document.getElementById('project-list');
-        const newTaskProjectElement = document.getElementById('new-task-project');
+        const modalNewTaskProjectElement = document.getElementById('modal-new-task-project');
 
-        projectListElement.innerHTML = '';
-        newTaskProjectElement.innerHTML = '';
-
-        // Add "All" filter to sidebar
-        const allProjectsElement = document.createElement('li');
-        const allProjectsLink = document.createElement('a');
-        allProjectsLink.href = '#';
-        allProjectsLink.textContent = 'All';
-        if (this.taskList.projectFilter === 'all') {
-            allProjectsLink.classList.add('active');
-        }
-        allProjectsLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.taskList.setProjectFilter('all');
-            this.render();
-        });
-        allProjectsElement.appendChild(allProjectsLink);
-        projectListElement.appendChild(allProjectsElement);
-
-
-        // Add "No project" option to new task project dropdown
-        const noProjectOption = document.createElement('option');
-        noProjectOption.value = '';
-        noProjectOption.textContent = 'No project';
-        newTaskProjectElement.appendChild(noProjectOption);
-
-        projects.forEach(project => {
-            // Add project to sidebar list
-            const projectElement = document.createElement('li');
-            const projectLink = document.createElement('a');
-            projectLink.href = '#';
-            
-            const projectText = document.createElement('span');
-            projectText.textContent = project;
-            this.createProjectEditable(projectText, project);
-
-            const deleteButton = document.createElement('button');
-            deleteButton.textContent = 'Delete';
-            deleteButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.taskList.deleteProject(project);
+        if (projectListElement) {
+            projectListElement.innerHTML = '';
+            // Add "All" filter to sidebar
+            const allProjectsElement = document.createElement('li');
+            const allProjectsLink = document.createElement('a');
+            allProjectsLink.href = '#';
+            allProjectsLink.textContent = 'All';
+            if (this.taskList.projectFilter === 'all') {
+                allProjectsLink.classList.add('active');
+            }
+            allProjectsLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.taskList.setProjectFilter('all');
                 this.render();
             });
+            allProjectsElement.appendChild(allProjectsLink);
+            projectListElement.appendChild(allProjectsElement);
 
-            projectLink.appendChild(projectText);
-            projectElement.appendChild(projectLink);
-            projectElement.appendChild(deleteButton);
-            projectListElement.appendChild(projectElement);
+            projects.forEach(project => {
+                // Add project to sidebar list
+                const projectElement = document.createElement('li');
+                const projectLink = document.createElement('a');
+                projectLink.href = '#';
+                
+                const projectText = document.createElement('span');
+                projectText.textContent = project;
+                this.createProjectEditable(projectText, project);
 
-            // Add project to new task project dropdown
-            const projectOption = document.createElement('option');
-            projectOption.value = project;
-            projectOption.textContent = project;
-            newTaskProjectElement.appendChild(projectOption);
-        });
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.taskList.deleteProject(project);
+                    this.render();
+                });
 
-        // Add "Create new project" option
-        const newProjectOption = document.createElement('option');
-        newProjectOption.value = 'new-project';
-        newProjectOption.textContent = 'Create new project...';
-        newTaskProjectElement.appendChild(newProjectOption);
+                projectLink.appendChild(projectText);
+                projectElement.appendChild(projectLink);
+                projectElement.appendChild(deleteButton);
+                projectListElement.appendChild(projectElement);
+            });
+        }
+
+        if (modalNewTaskProjectElement) {
+            modalNewTaskProjectElement.innerHTML = '';
+            // Add "No project" option to new task project dropdown
+            const noProjectOption = document.createElement('option');
+            noProjectOption.value = '';
+            noProjectOption.textContent = 'No project';
+            modalNewTaskProjectElement.appendChild(noProjectOption);
+
+            projects.forEach(project => {
+                // Add project to new task project dropdown
+                const projectOption = document.createElement('option');
+                projectOption.value = project;
+                projectOption.textContent = project;
+                modalNewTaskProjectElement.appendChild(projectOption);
+            });
+
+            // Add "Create new project" option
+            const newProjectOption = document.createElement('option');
+            newProjectOption.value = 'new-project';
+            newProjectOption.textContent = 'Create new project...';
+            modalNewTaskProjectElement.appendChild(newProjectOption);
+        }
     }
 
     createEditable(element, task, property, type, options = []) {
@@ -390,8 +400,6 @@ class UI {
             feedbackElement.remove();
         }, 3000);
     }
-
-
 }
 
 export { UI };

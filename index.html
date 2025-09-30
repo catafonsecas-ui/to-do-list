@@ -6,6 +6,7 @@
   <link rel="icon" href="data:;base64,iVBORw0KGgo=">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
   <div class="app-container">
@@ -31,19 +32,45 @@
         </div>
       </nav>
       <main class="main-content">
-        <form id="form">
-          <input type="text" id="new-task-input" placeholder="New Task">
-          <select id="new-task-priority">
-            <option value="high">High</option>
-            <option value="medium" selected>Medium</option>
-            <option value="low">Low</option>
-          </select>
-          <select id="new-task-project">
-            <!-- Projects will be dynamically inserted here -->
-          </select>
-          <input type="date" id="new-task-deadline">
-          <button type="button" id="new-task-btn">Add Task</button>
-        </form>
+        <button id="add-task-btn">+ Add Task</button>
+
+        <div id="new-task-modal" class="modal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>New Task</h2>
+              <button id="close-modal-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+              <form id="modal-form">
+                <div class="form-group">
+                  <label for="modal-new-task-input">Task</label>
+                  <input type="text" id="modal-new-task-input" placeholder="New Task">
+                </div>
+                <div class="form-group">
+                  <label for="modal-new-task-priority">Priority</label>
+                  <select id="modal-new-task-priority">
+                    <option value="high">High</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="modal-new-task-project">Project</label>
+                  <select id="modal-new-task-project">
+                    <!-- Projects will be dynamically inserted here -->
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="modal-new-task-deadline">Deadline</label>
+                  <input type="date" id="modal-new-task-deadline">
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button id="modal-add-task-btn" type="button">Add Task</button>
+            </div>
+          </div>
+        </div>
 
 
         <div class="task-list-header">

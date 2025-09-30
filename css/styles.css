@@ -103,7 +103,21 @@ body {
 
 #form {
   display: flex;
+  gap: 16px;
+  align-items: flex-end;
   margin-bottom: 24px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 4px;
 }
 
 #taskInput {
@@ -146,15 +160,21 @@ body {
 #lista li {
   background-color: #fff;
   border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 16px;
-  margin-bottom: 8px;
+  border-radius: 8px; /* Increased border-radius */
+  padding: 20px; /* Increased padding */
+  margin-bottom: 16px; /* Increased margin */
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px; /* Increased gap */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Added box-shadow */
+  transition: box-shadow 0.2s;
 }
 
-#lista li.done .texto {
+#lista li:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Enhanced box-shadow on hover */
+}
+
+#lista li.completed .texto {
   text-decoration: line-through;
   color: #999;
 }
@@ -172,7 +192,7 @@ body {
   gap: 4px;
 }
 
-#lista .btn-borrar {
+#lista .delete-btn {
   background: none;
   border: none;
   color: #999;
@@ -181,7 +201,7 @@ body {
   transition: opacity 0.2s;
 }
 
-#lista li:hover .btn-borrar {
+#lista li:hover .delete-btn {
   opacity: 1;
 }
 
@@ -259,5 +279,77 @@ body {
 
 #new-task-priority.priority-low {
     color: #4caf50;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+  max-width: 500px;
+  border-radius: 8px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-header h2 {
+  margin: 0;
+}
+
+.close-btn {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 20px 0;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
+  border-top: 1px solid #e0e0e0;
+}
+
+#modal-add-task-btn {
+  background-color: #2a7be4;
+  color: #fff;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
