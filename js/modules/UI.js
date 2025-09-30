@@ -8,8 +8,6 @@ class UI {
         this.newTaskPriority = document.getElementById('new-task-priority');
         this.newTaskProject = document.getElementById('new-task-project');
         this.newTaskDeadline = document.getElementById('new-task-deadline');
-        this.projectInputContainer = document.getElementById('projectInputContainer');
-        this.projectInput = document.getElementById('projectInput');
 
         const addTaskHandler = () => {
             const taskText = this.newTaskInput.value.trim();
@@ -34,10 +32,30 @@ class UI {
         });
 
         this.newTaskProject.addEventListener('change', () => {
+            console.log('New task project dropdown changed, value:', this.newTaskProject.value);
             if (this.newTaskProject.value === 'new-project') {
-                this.showNewProjectInput((newProject) => {
-                    this.renderProjects();
-                    this.newTaskProject.value = newProject;
+                console.log('Creating new project input for new task');
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = 'New project name';
+                this.newTaskProject.replaceWith(input);
+                input.focus();
+                
+                const handleNewProject = (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        const newProject = input.value.trim();
+                        if (newProject) {
+                            this.taskList.addProject(newProject);
+                            this.renderProjects();
+                            this.newTaskProject.value = newProject;
+                        }
+                        this.render(); // Re-render to show the select again
+                    }
+                };
+                input.addEventListener('keydown', handleNewProject);
+                input.addEventListener('blur', () => {
+                    this.render();
                 });
             }
         });
@@ -56,7 +74,6 @@ class UI {
     render() {
         this.renderProjects();
         const tasks = this.taskList.getFilteredAndSortedTasks();
-        console.log('Rendering tasks:', tasks);
         const taskListElement = document.getElementById('lista');
         taskListElement.innerHTML = '';
 
@@ -305,7 +322,6 @@ class UI {
     }
 
     createTaskProjectEditable(element, task) {
-        console.log('Creating editable project for task:', task);
         element.addEventListener('click', () => {
             const originalElement = element;
             const oldValue = task.project;
@@ -335,18 +351,32 @@ class UI {
             select.addEventListener('change', () => {
                 const newValue = select.value;
                 if (newValue === 'new-project') {
-                    this.showNewProjectInput((newProject) => {
-                        this.taskList.updateTaskDetails(task.id, { project: newProject });
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.placeholder = 'New project name';
+                    select.replaceWith(input);
+                    input.focus();
+                    
+                    const handleNewProject = (event) => {
+                        if (event.key === 'Enter') {
+                            event.preventDefault();
+                            const newProject = input.value.trim();
+                            if (newProject) {
+                                this.taskList.addProject(newProject);
+                                this.taskList.updateTaskDetails(task.id, { project: newProject });
+                                this.render();
+                            }
+                        }
+                    };
+                    input.addEventListener('keydown', handleNewProject);
+                    input.addEventListener('blur', () => {
                         this.render();
                     });
+                    
                 } else {
                     this.taskList.updateTaskDetails(task.id, { project: newValue });
                     this.render();
                 }
-            });
-            
-            select.addEventListener('blur', () => {
-                this.render();
             });
         });
     }
@@ -361,27 +391,7 @@ class UI {
         }, 3000);
     }
 
-    showNewProjectInput(callback) {
-        this.projectInputContainer.style.display = 'block';
-        this.projectInput.focus();
-    
-        const handleNewProject = (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                const newProject = this.projectInput.value.trim();
-                if (newProject) {
-                    this.taskList.addProject(newProject);
-                    this.projectInput.value = '';
-                    this.projectInputContainer.style.display = 'none';
-                    if (callback) {
-                        callback(newProject);
-                    }
-                }
-                this.projectInput.removeEventListener('keydown', handleNewProject);
-            }
-        };
-        this.projectInput.addEventListener('keydown', handleNewProject);
-    }
+
 }
 
 export { UI };
