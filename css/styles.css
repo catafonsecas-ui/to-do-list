@@ -228,3 +228,36 @@ body {
     padding: 2px 4px;
     border-radius: 4px;
 }
+
+.priority-circle {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.priority-circle.priority-high {
+    background-color: #ff5252;
+}
+
+.priority-circle.priority-medium {
+    background-color: #ffc107;
+}
+
+.priority-circle.priority-low {
+    background-color: #4caf50;
+}
+
+#new-task-priority.priority-high {
+    color: #ff5252;
+}
+
+#new-task-priority.priority-medium {
+    color: #ffc107;
+}
+
+#new-task-priority.priority-low {
+    color: #4caf50;
+}
+

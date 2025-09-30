@@ -41,6 +41,16 @@ class UI {
                 });
             }
         });
+
+        const setPriorityColor = () => {
+            this.newTaskPriority.classList.remove('priority-high', 'priority-medium', 'priority-low');
+            this.newTaskPriority.classList.add(`priority-${this.newTaskPriority.value}`);
+        };
+
+        this.newTaskPriority.addEventListener('change', setPriorityColor);
+
+        // Set initial color
+        setPriorityColor();
     }
 
     render() {
@@ -57,19 +67,23 @@ class UI {
             taskText.textContent = task.text;
             this.createEditable(taskText, task, 'text', 'text');
 
+            const priorityContainer = document.createElement('span');
+            const priorityCircle = document.createElement('span');
+            priorityCircle.classList.add('priority-circle', `priority-${task.priority}`);
             const taskPriority = document.createElement('span');
             taskPriority.textContent = task.priority;
             this.createEditable(taskPriority, task, 'priority', 'select', ['high', 'medium', 'low']);
+            priorityContainer.appendChild(priorityCircle);
+            priorityContainer.appendChild(taskPriority);
 
             const taskProject = document.createElement('span');
             taskProject.textContent = task.project || 'No project';
             this.createTaskProjectEditable(taskProject, task);
 
-                    const taskDeadline = document.createElement('span');
-                    console.log('Task deadline value:', task.deadline);
-                    taskDeadline.textContent = task.deadline || 'no deadline';
-                    console.log('Task deadline element:', taskDeadline);
-                    this.createEditable(taskDeadline, task, 'deadline', 'date');
+            const taskDeadline = document.createElement('span');
+            taskDeadline.textContent = task.deadline || 'no deadline';
+            this.createEditable(taskDeadline, task, 'deadline', 'date');
+
             const deleteButton = document.createElement('button');
             deleteButton.textContent = 'Delete';
             deleteButton.addEventListener('click', () => {
@@ -78,7 +92,7 @@ class UI {
             });
 
             taskElement.appendChild(taskText);
-            taskElement.appendChild(taskPriority);
+            taskElement.appendChild(priorityContainer);
             taskElement.appendChild(taskProject);
             taskElement.appendChild(taskDeadline);
             taskElement.appendChild(deleteButton);
