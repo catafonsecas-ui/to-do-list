@@ -222,6 +222,10 @@ body {
   opacity: 1;
 }
 
+#lista li:hover button.delete-btn {
+  opacity: 1;
+}
+
 /* Feedback Message */
 #feedback-msg {
   position: fixed;
