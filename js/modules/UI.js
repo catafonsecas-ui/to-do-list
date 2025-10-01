@@ -1,6 +1,7 @@
 class UI {
-    constructor(taskList) {
+    constructor(taskList, notifications) {
         this.taskList = taskList;
+        this.notifications = notifications;
         this.app = document.getElementById('app');
 
         // Modal elements
@@ -14,10 +15,58 @@ class UI {
         this.modalNewTaskProject = document.getElementById('modal-new-task-project');
         this.modalNewTaskDeadline = document.getElementById('modal-new-task-deadline');
 
+        this.newProjectForm = document.getElementById('new-project-form');
+        this.newProjectNameInput = document.getElementById('new-project-name');
+        this.addNewProjectBtn = document.getElementById('add-new-project-btn');
+
+        this.sortDropdown = document.getElementById('sort');
+
         // Event listeners
         this.addTaskBtn.addEventListener('click', () => this.openModal());
         this.closeModalBtn.addEventListener('click', () => this.closeModal());
         this.modalAddTaskBtn.addEventListener('click', () => this.addTaskHandler());
+        this.modalNewTaskProject.addEventListener('change', () => this.handleProjectChange());
+        this.addNewProjectBtn.addEventListener('click', () => this.addNewProject());
+        this.sortDropdown.addEventListener('change', () => this.handleSortChange());
+
+        // New filter event listeners
+        document.getElementById('filter-high').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.taskList.setFilter('high');
+            this.render();
+        });
+        document.getElementById('filter-medium').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.taskList.setFilter('medium');
+            this.render();
+        });
+        document.getElementById('filter-low').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.taskList.setFilter('low');
+            this.render();
+        });
+        document.getElementById('filter-completed').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.taskList.setFilter('completed');
+            this.render();
+        });
+
+        // Existing filter event listeners (ensure they are present and correct)
+        document.getElementById('filter-all').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.taskList.setFilter('all');
+            this.render();
+        });
+        document.getElementById('filter-today').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.taskList.setFilter('today');
+            this.render();
+        });
+        document.getElementById('filter-upcoming').addEventListener('click', (e) => {
+            e.preventDefault();
+            this.taskList.setFilter('upcoming');
+            this.render();
+        });
 
         const setPriorityColor = () => {
             this.modalNewTaskPriority.classList.remove('priority-high', 'priority-medium', 'priority-low');
@@ -42,25 +91,55 @@ class UI {
     addTaskHandler() {
         const taskText = this.modalNewTaskInput.value.trim();
         const priority = this.modalNewTaskPriority.value;
-        const project = this.modalNewTaskProject.value;
+        let project = this.modalNewTaskProject.value;
         const deadline = this.modalNewTaskDeadline.value;
 
         if (taskText) {
             if (project === 'new-project') {
-                const newProject = prompt('Enter new project name:');
-                if (newProject) {
-                    this.taskList.addProject(newProject);
-                    this.taskList.addTask({ text: taskText, priority: priority, project: newProject, deadline: deadline });
+                const newProjectName = this.newProjectNameInput.value.trim();
+                if (newProjectName) {
+                    this.taskList.addProject(newProjectName);
+                    project = newProjectName;
+                } else {
+                    // Handle case where new project name is empty
+                    this.notifications.showFeedback('Project name cannot be empty.', 'error');
+                    return;
                 }
-            } else {
-                this.taskList.addTask({ text: taskText, priority: priority, project: project, deadline: deadline });
             }
+            this.taskList.addTask({ text: taskText, priority: priority, project: project, deadline: deadline });
             this.render();
             this.closeModal();
             // Clear modal form fields
             this.modalNewTaskInput.value = '';
             this.modalNewTaskDeadline.value = '';
+            this.newProjectNameInput.value = '';
+            this.newProjectForm.style.display = 'none';
         }
+    }
+
+    handleProjectChange() {
+        if (this.modalNewTaskProject.value === 'new-project') {
+            this.newProjectForm.style.display = 'block';
+        } else {
+            this.newProjectForm.style.display = 'none';
+        }
+    }
+
+    addNewProject() {
+        const newProjectName = this.newProjectNameInput.value.trim();
+        if (newProjectName) {
+            this.taskList.addProject(newProjectName);
+            this.renderProjects();
+            this.modalNewTaskProject.value = newProjectName;
+            this.newProjectForm.style.display = 'none';
+            this.newProjectNameInput.value = '';
+        }
+    }
+
+    handleSortChange() {
+        const sortBy = this.sortDropdown.value;
+        this.taskList.setSort(sortBy);
+        this.render();
     }
 
     render() {
@@ -68,6 +147,15 @@ class UI {
         const tasks = this.taskList.getFilteredAndSortedTasks();
         const taskListElement = document.getElementById('lista');
         taskListElement.innerHTML = '';
+
+        // Handle active class for main filters
+        document.querySelectorAll('.filter-list a').forEach(link => {
+            link.classList.remove('active');
+        });
+        const activeFilterLink = document.getElementById(`filter-${this.taskList.filter}`);
+        if (activeFilterLink) {
+            activeFilterLink.classList.add('active');
+        }
 
         tasks.forEach(task => {
             const taskElement = document.createElement('li');
@@ -102,7 +190,7 @@ class UI {
             this.createTaskProjectEditable(taskProject, task);
 
             const taskDeadline = document.createElement('span');
-            taskDeadline.textContent = task.deadline || 'no deadline';
+            taskDeadline.textContent = this.formatDeadline(task.deadline);
             this.createEditable(taskDeadline, task, 'deadline', 'date');
 
             const deleteButton = document.createElement('button');
@@ -152,12 +240,23 @@ class UI {
                 const projectLink = document.createElement('a');
                 projectLink.href = '#';
                 
+                if (this.taskList.projectFilter === project) {
+                    projectLink.classList.add('active');
+                }
+
+                projectLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.taskList.setProjectFilter(project);
+                    this.render();
+                });
+                
                 const projectText = document.createElement('span');
                 projectText.textContent = project;
                 this.createProjectEditable(projectText, project);
 
                 const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Delete';
+                deleteButton.classList.add('delete-btn');
+                deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
                 deleteButton.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.taskList.deleteProject(project);
@@ -204,6 +303,8 @@ class UI {
 
             if (type === 'select') {
                 input = document.createElement('select');
+                input.id = `edit-${task.id}-${property}`;
+                input.name = `edit-${task.id}-${property}`;
                 options.forEach(option => {
                     const opt = document.createElement('option');
                     opt.value = option;
@@ -222,11 +323,15 @@ class UI {
                 dateInput.type = 'date';
                 dateInput.value = oldDateValue;
                 dateInput.classList.add('editing');
+                dateInput.id = `edit-date-${task.id}-${property}`;
+                dateInput.name = `edit-date-${task.id}-${property}`;
 
                 const timeInput = document.createElement('input');
                 timeInput.type = 'time';
                 timeInput.value = oldTimeValue;
                 timeInput.classList.add('editing');
+                timeInput.id = `edit-time-${task.id}-${property}`;
+                timeInput.name = `edit-time-${task.id}-${property}`;
 
                 const container = document.createElement('span');
                 container.appendChild(dateInput);
@@ -269,6 +374,8 @@ class UI {
                 input = document.createElement('input');
                 input.type = type;
                 input.value = oldValue;
+                input.id = `edit-${task.id}-${property}`;
+                input.name = `edit-${task.id}-${property}`;
             }
 
             originalElement.replaceWith(input);
@@ -391,14 +498,49 @@ class UI {
         });
     }
 
-    showFeedback(message, type = 'info') {
-        const feedbackElement = document.createElement('div');
-        feedbackElement.className = `feedback ${type}`;
-        feedbackElement.textContent = message;
-        this.app.prepend(feedbackElement);
-        setTimeout(() => {
-            feedbackElement.remove();
-        }, 3000);
+    showNewProjectInput(callback) {
+        this.projectInputContainer.style.display = 'block';
+        this.projectInput.focus();
+    
+        const handleNewProject = (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const newProject = this.projectInput.value.trim();
+                if (newProject) {
+                    this.taskList.addProject(newProject);
+                    this.projectInput.value = '';
+                    this.projectInputContainer.style.display = 'none';
+                    if (callback) {
+                        callback(newProject);
+                    }
+                }
+                this.projectInput.removeEventListener('keydown', handleNewProject);
+            }
+        };
+        this.projectInput.addEventListener('keydown', handleNewProject);
+    }
+
+    formatDeadline(deadline) {
+        if (!deadline) {
+            return 'no deadline';
+        }
+    
+        const date = new Date(deadline);
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+    
+        if (date.toDateString() === today.toDateString()) {
+            return 'Today';
+        } else if (date.toDateString() === tomorrow.toDateString()) {
+            return 'Tomorrow';
+        } else if (date.toDateString() === yesterday.toDateString()) {
+            return 'Yesterday';
+        } else {
+            return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        }
     }
 }
 

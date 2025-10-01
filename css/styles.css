@@ -54,6 +54,7 @@ body {
   color: #666;
   margin: 0 0 12px 0;
   text-transform: uppercase;
+  background-color: #fff; /* Explicitly set background to white */
 }
 
 .filter-list, .project-list {
@@ -68,12 +69,30 @@ body {
 
 .filter-list a, .project-list a {
   text-decoration: none;
-  color: #333;
+  color: #333; /* Restored color */
   font-weight: 500;
-  padding: 8px 12px;
+  padding: 8px 12px; /* Restored padding */
   border-radius: 6px;
   display: block;
   transition: background-color 0.2s;
+}
+
+.project-list a span {
+  /* Removed padding from here */
+}
+
+.project-list li {
+  display: flex;
+  align-items: center;
+  /* Removed justify-content: space-between; */
+}
+
+.project-list li a {
+  flex-grow: 1; /* Make the link take up available space */
+}
+
+.project-list li .delete-btn {
+  margin-left: auto; /* Push the delete button to the right */
 }
 
 .filter-list a:hover, .project-list a:hover {
@@ -146,8 +165,6 @@ body {
 }
 
 .controls {
-  display: flex;
-  gap: 16px;
 }
 
 /* Task List */
@@ -192,16 +209,16 @@ body {
   gap: 4px;
 }
 
-#lista .delete-btn {
+.delete-btn {
   background: none;
   border: none;
-  color: #999;
+  color: #999 !important;
   cursor: pointer;
-  opacity: 0;
+  opacity: 0; /* Removed !important */
   transition: opacity 0.2s;
 }
 
-#lista li:hover .delete-btn {
+.project-list li:hover button.delete-btn {
   opacity: 1;
 }
 
@@ -349,6 +366,28 @@ body {
   color: #fff;
   border: none;
   padding: 10px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#new-project-form {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+#new-project-name {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+#add-new-project-btn {
+  background-color: #4caf50;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
   border-radius: 6px;
   cursor: pointer;
 }

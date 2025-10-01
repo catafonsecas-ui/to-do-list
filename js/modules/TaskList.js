@@ -106,11 +106,6 @@ export class TaskList {
         }
     }
 
-    clearCompleted() {
-        this.tasks = this.tasks.filter(t => !t.completed);
-        this.save();
-    }
-
     getFilteredAndSortedTasks() {
         let tasks = [...this.tasks];
 
@@ -121,6 +116,14 @@ export class TaskList {
         } else if (this.filter === 'upcoming') {
             const today = new Date().toISOString().slice(0, 10);
             tasks = tasks.filter(t => t.deadline && t.deadline.slice(0, 10) > today);
+        } else if (this.filter === 'high') {
+            tasks = tasks.filter(t => t.priority === 'high' && !t.completed);
+        } else if (this.filter === 'medium') {
+            tasks = tasks.filter(t => t.priority === 'medium' && !t.completed);
+        } else if (this.filter === 'low') {
+            tasks = tasks.filter(t => t.priority === 'low' && !t.completed);
+        } else if (this.filter === 'completed') {
+            tasks = tasks.filter(t => t.completed);
         }
 
         if (this.projectFilter !== 'all') {
@@ -128,11 +131,16 @@ export class TaskList {
         }
 
         // Apply sorting
+        console.log('TaskList - getFilteredAndSortedTasks: current sort is', this.sort);
         if (this.sort === 'dueDate') {
             tasks.sort((a, b) => (a.deadline || 'zz').localeCompare(b.deadline || 'zz'));
         } else if (this.sort === 'priority') {
             const priorityOrder = { 'high': 1, 'medium': 2, 'low': 3 };
             tasks.sort((a, b) => (priorityOrder[a.priority] || 4) - (priorityOrder[b.priority] || 4));
+        } else if (this.sort === 'project') {
+            tasks.sort((a, b) => (a.project || 'zz').localeCompare(b.project || 'zz'));
+        } else if (this.sort === 'project') {
+            tasks.sort((a, b) => (a.project || 'zz').localeCompare(b.project || 'zz'));
         }
 
         return tasks;
@@ -147,6 +155,7 @@ export class TaskList {
     }
 
     setSort(sort) {
+        console.log('TaskList - setSort called with:', sort);
         this.sort = sort;
     }
 

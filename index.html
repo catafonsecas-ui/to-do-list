@@ -21,6 +21,10 @@
             <li><a href="#" id="filter-all" class="active">All</a></li>
             <li><a href="#" id="filter-today">Today</a></li>
             <li><a href="#" id="filter-upcoming">Upcoming</a></li>
+            <li><a href="#" id="filter-high">High Priority</a></li>
+            <li><a href="#" id="filter-medium">Medium Priority</a></li>
+            <li><a href="#" id="filter-low">Low Priority</a></li>
+            <li><a href="#" id="filter-completed">Completed</a></li>
           </ul>
         </div>
         <div class="sidebar-section">
@@ -59,6 +63,11 @@
                   <select id="modal-new-task-project">
                     <!-- Projects will be dynamically inserted here -->
                   </select>
+                  <div id="new-project-form" style="display: none;">
+                    <label for="new-project-name">New Project Name</label>
+                    <input type="text" id="new-project-name" name="new-project-name" placeholder="New project name">
+                    <button type="button" id="add-new-project-btn">Add Project</button>
+                  </div>
                 </div>
                 <div class="form-group">
                   <label for="modal-new-task-deadline">Deadline</label>
@@ -76,15 +85,13 @@
         <div class="task-list-header">
           <div class="controls">
             <div>
-              <label>Sort by: </label>
+              <label for="sort">Sort by: </label>
               <select id="sort">
                 <option value="manual">Manual</option>
                 <option value="dueDate">Due Date</option>
                 <option value="priority">Priority</option>
+                <option value="project">Project</option>
               </select>
-            </div>
-            <div>
-              <button id="clearCompleted">Clear Completed</button>
             </div>
           </div>
         </div>

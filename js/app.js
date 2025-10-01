@@ -6,7 +6,7 @@ import { Notifications } from './modules/Notifications.js';
 document.addEventListener('DOMContentLoaded', () => {
     const notifications = new Notifications();
     const taskList = new TaskList(notifications);
-    const ui = new UI(taskList);
+    const ui = new UI(taskList, notifications);
     ui.render();
     notifications.startChecking(taskList);
 });
