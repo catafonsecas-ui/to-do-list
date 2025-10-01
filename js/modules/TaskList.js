@@ -139,8 +139,8 @@ export class TaskList {
             tasks.sort((a, b) => (priorityOrder[a.priority] || 4) - (priorityOrder[b.priority] || 4));
         } else if (this.sort === 'project') {
             tasks.sort((a, b) => (a.project || 'zz').localeCompare(b.project || 'zz'));
-        } else if (this.sort === 'project') {
-            tasks.sort((a, b) => (a.project || 'zz').localeCompare(b.project || 'zz'));
+        } else if (this.sort === 'name') {
+            tasks.sort((a, b) => a.text.localeCompare(b.text));
         }
 
         return tasks;
