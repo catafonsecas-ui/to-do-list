@@ -14,6 +14,7 @@ class UI {
         this.modalNewTaskPriority = document.getElementById('modal-new-task-priority');
         this.modalNewTaskProject = document.getElementById('modal-new-task-project');
         this.modalNewTaskDeadline = document.getElementById('modal-new-task-deadline');
+        this.modalNewTaskReminder = document.getElementById('modal-new-task-reminder');
 
         this.newProjectForm = document.getElementById('new-project-form');
         this.newProjectNameInput = document.getElementById('new-project-name');
@@ -93,6 +94,7 @@ class UI {
         const priority = this.modalNewTaskPriority.value;
         let project = this.modalNewTaskProject.value;
         const deadline = this.modalNewTaskDeadline.value;
+        const reminder = this.modalNewTaskReminder.value;
 
         if (taskText) {
             if (project === 'new-project') {
@@ -106,12 +108,13 @@ class UI {
                     return;
                 }
             }
-            this.taskList.addTask({ text: taskText, priority: priority, project: project, deadline: deadline });
+            this.taskList.addTask({ text: taskText, priority: priority, project: project, deadline: deadline, reminder: reminder });
             this.render();
             this.closeModal();
             // Clear modal form fields
             this.modalNewTaskInput.value = '';
             this.modalNewTaskDeadline.value = '';
+            this.modalNewTaskReminder.value = '';
             this.newProjectNameInput.value = '';
             this.newProjectForm.style.display = 'none';
         }
@@ -193,6 +196,21 @@ class UI {
             taskDeadline.textContent = this.formatDeadline(task.deadline);
             this.createEditable(taskDeadline, task, 'deadline', 'date');
 
+            const taskReminderContainer = document.createElement('span');
+            const reminderIcon = document.createElement('i');
+            reminderIcon.classList.add('fas', 'fa-bell');
+            const reminderText = document.createElement('span');
+
+            if (task.reminder) {
+                reminderText.textContent = task.reminder;
+                taskReminderContainer.appendChild(reminderIcon);
+                taskReminderContainer.appendChild(reminderText);
+            } else {
+                reminderText.textContent = 'add reminder';
+                taskReminderContainer.appendChild(reminderText);
+            }
+            this.createEditable(reminderText, task, 'reminder', 'select', ['', '5min', '15min', '30min', '1hour', '2hours', '1day', '2days', '1week']);
+
             const deleteButton = document.createElement('button');
             deleteButton.classList.add('delete-btn');
             deleteButton.innerHTML = '<i class="fas fa-trash"></i>';
@@ -206,6 +224,7 @@ class UI {
             taskElement.appendChild(priorityContainer);
             taskElement.appendChild(taskProject);
             taskElement.appendChild(taskDeadline);
+            taskElement.appendChild(taskReminderContainer);
             taskElement.appendChild(deleteButton);
             taskListElement.appendChild(taskElement);
         });

@@ -212,9 +212,9 @@ body {
 .delete-btn {
   background: none;
   border: none;
-  color: #999 !important;
+  color: #999; /* Removed !important */
   cursor: pointer;
-  opacity: 0; /* Removed !important */
+  opacity: 0;
   transition: opacity 0.2s;
 }
 
@@ -222,7 +222,7 @@ body {
   opacity: 1;
 }
 
-#lista li:hover button.delete-btn {
+#lista li:hover .delete-btn {
   opacity: 1;
 }
 

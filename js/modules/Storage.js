@@ -1,6 +1,20 @@
 export class Storage {
     constructor(key = 'my_tasks') {
+        if (!this.isLocalStorageAvailable()) {
+            throw new Error('Local storage is not available');
+        }
         this.STORAGE_KEY = key;
+    }
+
+    isLocalStorageAvailable() {
+        try {
+            const testKey = '__test__';
+            localStorage.setItem(testKey, testKey);
+            localStorage.removeItem(testKey);
+            return true;
+        } catch (e) {
+            return false;
+        }
     }
 
     getTasks() {
