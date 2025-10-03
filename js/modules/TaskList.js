@@ -37,8 +37,12 @@ export class TaskList {
         const task = new Task(details.text);
         task.deadline = details.deadline;
         task.priority = details.priority;
-        task.reminder = details.reminder;
         task.project = details.project;
+
+        if (details.reminder) {
+            task.reminder = this.notifications.calculateNextReminder(task.deadline, details.reminder);
+        }
+
         this.tasks.push(task);
         this.save();
         console.log('TaskList - Task added:', task);
@@ -69,6 +73,9 @@ export class TaskList {
     updateTaskDetails(taskId, details) {
         const task = this.tasks.find(t => t.id === taskId);
         if (task) {
+            if (details.reminder) {
+                details.reminder = this.notifications.calculateNextReminder(task.deadline, details.reminder);
+            }
             Object.assign(task, details);
             this.save();
         }

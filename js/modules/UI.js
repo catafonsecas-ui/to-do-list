@@ -226,6 +226,66 @@ class UI {
             taskElement.appendChild(taskDeadline);
             taskElement.appendChild(taskReminderContainer);
             taskElement.appendChild(deleteButton);
+
+            const subtaskListElement = document.createElement('ul');
+            subtaskListElement.classList.add('subtask-list');
+            if (task.subtasks && task.subtasks.length > 0) {
+                task.subtasks.forEach((subtask, index) => {
+                    const subtaskElement = document.createElement('li');
+                    subtaskElement.classList.add('subtask-item');
+
+                    const subtaskCheckbox = document.createElement('input');
+                    subtaskCheckbox.type = 'checkbox';
+                    subtaskCheckbox.checked = subtask.completed;
+                    subtaskCheckbox.addEventListener('change', () => {
+                        this.taskList.toggleSubtask(task.id, index);
+                        this.render();
+                    });
+
+                    const subtaskText = document.createElement('span');
+                    subtaskText.textContent = subtask.text;
+                    if (subtask.completed) {
+                        subtaskText.classList.add('completed');
+                    }
+
+                    const deleteSubtaskButton = document.createElement('button');
+                    deleteSubtaskButton.classList.add('delete-btn');
+                    deleteSubtaskButton.innerHTML = '<i class="fas fa-trash"></i>';
+                    deleteSubtaskButton.addEventListener('click', () => {
+                        this.taskList.removeSubtask(task.id, index);
+                        this.render();
+                    });
+
+                    subtaskElement.appendChild(subtaskCheckbox);
+                    subtaskElement.appendChild(subtaskText);
+                    subtaskElement.appendChild(deleteSubtaskButton);
+                    subtaskListElement.appendChild(subtaskElement);
+                });
+            }
+
+            const addSubtaskButton = document.createElement('button');
+            addSubtaskButton.textContent = '+ Add Subtask';
+            addSubtaskButton.classList.add('add-subtask-btn');
+            addSubtaskButton.addEventListener('click', () => {
+                const subtaskInput = document.createElement('input');
+                subtaskInput.type = 'text';
+                subtaskInput.placeholder = 'New Subtask';
+                subtaskInput.classList.add('subtask-input');
+                subtaskInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        if (subtaskInput.value.trim()) {
+                            this.taskList.addSubtask(task.id, subtaskInput.value.trim());
+                            this.render();
+                        }
+                    }
+                });
+                subtaskListElement.appendChild(subtaskInput);
+                subtaskInput.focus();
+            });
+
+            taskElement.appendChild(subtaskListElement);
+            taskElement.appendChild(addSubtaskButton);
+
             taskListElement.appendChild(taskElement);
         });
     }

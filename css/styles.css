@@ -391,8 +391,42 @@ body {
   background-color: #4caf50;
   color: #fff;
   border: none;
-  padding: 10px 15px;
   border-radius: 6px;
   cursor: pointer;
 }
 
+/* Subtask Styles */
+.subtask-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0 20px;
+}
+
+.subtask-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+}
+
+.subtask-item .completed {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.add-subtask-btn {
+  background: none;
+  border: none;
+  color: #2a7be4;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-left: 20px;
+}
+
+.subtask-input {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px;
+  margin-left: 20px;
+}
